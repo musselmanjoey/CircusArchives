@@ -1,47 +1,91 @@
-# Testing Agent Workflow
+---
+description: Run and create Playwright tests for the circus video archive
+---
 
-## Role
-Create and maintain tests using Jest, React Testing Library, and Gherkin/Cucumber for BDD.
+## Testing Guidelines
 
-## Testing Strategy
+You are the Testing Agent for the Circus Video Archive project. Your focus is ensuring code quality through comprehensive Playwright end-to-end tests.
 
-### Unit Tests (/tests/unit/)
-- Utility functions (YouTube URL parsing, etc.)
-- Individual component rendering
-- API route handlers
+### Tech Stack
+- Framework: Playwright with TypeScript
+- Test Location: `tests/e2e/`
+- Config: `playwright.config.ts`
 
-### Integration Tests (/tests/integration/)
-- API endpoints with database
-- Form submissions
-- Search functionality
+### When Asked to Run Tests
 
-### Feature Tests (/tests/features/)
-- Gherkin .feature files for BDD
-- User journey scenarios
-- Acceptance criteria verification
+1. Check if Playwright is installed by looking for `@playwright/test` in package.json.
+2. If not installed, install Playwright:
+// turbo
+3. Run `npm install -D @playwright/test`
+// turbo
+4. Run `npx playwright install`
+5. Run the test suite:
+// turbo
+6. Run `npx playwright test`
+7. If tests fail, analyze the error output and suggest fixes.
+8. Generate an HTML report for review:
+// turbo
+9. Run `npx playwright show-report`
 
-## Priority Tests for V1
-1. YouTube URL parsing and validation
-2. Video submission flow
-3. Search/filter functionality
-4. Video display and embedding
+### When Asked to Create Tests
 
-## Gherkin Example Format
-```gherkin
-Feature: Video Submission
-  As a circus alumni
-  I want to submit a YouTube video
-  So that it can be preserved in the archive
+1. Ask which feature or page needs testing.
+2. Read the relevant component/page code to understand its behavior.
+3. Create a new test file in `tests/e2e/[feature].spec.ts`.
+4. Follow this test structure:
 
-  Scenario: Submit valid YouTube URL
-    Given I am on the video submission page
-    When I enter a valid YouTube URL
-    And I fill in the title and year
-    And I select an act category
-    Then the video should be added to the archive
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('[Feature Name]', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/relevant-page');
+  });
+
+  test('should [expected behavior]', async ({ page }) => {
+    // Arrange
+    // Act
+    // Assert
+    await expect(page.locator('[selector]')).toBeVisible();
+  });
+});
 ```
 
-## Commands
-- `npm test` - Run all tests
-- `npm run test:watch` - Watch mode
-- `npm run test:coverage` - Coverage report
+5. Include tests for:
+   - Happy path (normal user flow)
+   - Edge cases (empty states, errors)
+   - Form validation
+   - Navigation
+
+### Priority Tests for V1 MVP
+
+1. **Video Submission Flow**
+   - Submit valid YouTube URL
+   - Reject invalid URLs
+   - Form validation errors display correctly
+
+2. **Video Browsing**
+   - Videos display in grid
+   - Filtering by act works
+   - Filtering by year works
+   - Search returns relevant results
+
+3. **Video Playback**
+   - YouTube embed loads correctly
+   - Video metadata displays
+
+### Test Naming Convention
+
+Use descriptive names: `[page/feature].spec.ts`
+- `video-submission.spec.ts`
+- `video-browsing.spec.ts`
+- `search.spec.ts`
+- `video-player.spec.ts`
+
+### Commands Reference
+
+- `npx playwright test` - Run all tests
+- `npx playwright test [file]` - Run specific file
+- `npx playwright test --ui` - Interactive UI mode
+- `npx playwright test --debug` - Debug mode
+- `npx playwright codegen [url]` - Generate tests by recording

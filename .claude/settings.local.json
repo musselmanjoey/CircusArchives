@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest circus-video-archive --typescript --eslint --tailwind --src-dir --app --import-alias \"@/*\" --no-git --use-npm --no-turbopack)",
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir /s /b \"*mcp_server*\")",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(ping:*)",
+      "Bash(PGPASSWORD=Gamecube64 psql:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx prisma db seed)",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Initial Circus Video Archive setup\n\n- Next.js 16 with App Router and TypeScript\n- Prisma ORM with PostgreSQL (acts + videos tables)\n- Tailwind CSS styling with reusable UI components\n- YouTube video embedding and URL validation\n- Video submission form and browse/search pages\n- API routes for videos and acts\n- Agent workflows for Antigravity IDE\n- Business documentation and architecture docs\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

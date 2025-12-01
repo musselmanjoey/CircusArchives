@@ -1,0 +1,91 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Circus Video Archive" [ref=e5]:
+        - /url: /
+        - generic [ref=e6]: Circus Video Archive
+      - navigation [ref=e7]:
+        - link "Browse" [ref=e8]:
+          - /url: /videos
+        - link "Submit Video" [ref=e9]:
+          - /url: /submit
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - heading "Submit a Video" [level=1] [ref=e12]
+      - paragraph [ref=e13]: Share a YouTube video of a circus performance to add it to our archive.
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]: YouTube URL
+          - textbox "YouTube URL" [ref=e17]:
+            - /placeholder: https://www.youtube.com/watch?v=...
+        - generic [ref=e18]:
+          - generic [ref=e19]: Title
+          - textbox "Title" [ref=e20]:
+            - /placeholder: Enter video title
+            - text: Rick Roll
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: Year
+            - combobox "Year" [ref=e24]:
+              - option "2025" [selected]
+              - option "2024"
+              - option "2023"
+              - option "2022"
+              - option "2021"
+              - option "2020"
+              - option "2019"
+              - option "2018"
+              - option "2017"
+              - option "2016"
+              - option "2015"
+              - option "2014"
+              - option "2013"
+              - option "2012"
+              - option "2011"
+              - option "2010"
+              - option "2009"
+              - option "2008"
+              - option "2007"
+              - option "2006"
+              - option "2005"
+              - option "2004"
+              - option "2003"
+              - option "2002"
+              - option "2001"
+              - option "2000"
+              - option "1999"
+              - option "1998"
+              - option "1997"
+              - option "1996"
+              - option "1995"
+              - option "1994"
+              - option "1993"
+              - option "1992"
+              - option "1991"
+              - option "1990"
+          - generic [ref=e25]:
+            - generic [ref=e26]: Act Category
+            - combobox "Act Category" [ref=e27]:
+              - option "Select an act" [disabled]
+              - option "Juggling" [selected]
+              - option "Aerial Silks"
+              - option "Trapeze"
+              - option "Acrobatics"
+              - option "Clowning"
+        - generic [ref=e28]:
+          - generic [ref=e29]: Description (optional)
+          - textbox "Description (optional)" [active] [ref=e30]:
+            - /placeholder: Add any additional details about this performance...
+            - text: Never gonna give you up
+        - button "Submit Video" [ref=e31]
+  - contentinfo [ref=e32]:
+    - generic [ref=e34]:
+      - paragraph [ref=e35]: Preserving circus performance history for future generations.
+      - paragraph [ref=e36]: © 2025 Circus Video Archive. All rights reserved.
+  - button "Open Next.js Dev Tools" [ref=e42] [cursor=pointer]:
+    - img [ref=e43]
+  - alert [ref=e48]
+```
