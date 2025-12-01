@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Circus Video Archive
+
+A community-driven platform for preserving and celebrating circus performance history.
+
+## Mission
+
+Following the tornado that damaged the circus tent and caused a multi-year disruption, significant institutional knowledge was lost. This platform aims to recapture that knowledge and give it back to the performer community as a lasting gift.
+
+## Features (V1 MVP)
+
+- YouTube video embedding and display
+- Video submission with metadata (title, year, description)
+- Act categorization (dynamic categories)
+- Browse and search interface
+
+## Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Database:** PostgreSQL + Prisma
+- **Styling:** Tailwind CSS
+- **Testing:** Jest + React Testing Library + Cucumber
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run database migrations
+npx prisma migrate dev
+
+# Seed the database (optional)
+npx prisma db seed
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/          # Next.js App Router pages
+├── components/   # React components
+├── lib/          # Utility functions
+└── types/        # TypeScript types
 
-## Learn More
+prisma/           # Database schema and migrations
+docs/             # Documentation
+tests/            # Test files
+.agent/           # Antigravity agent configuration
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Version Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **V1:** Core Video Archive (MVP) - Current
+- **V2:** Authentication & Alumni Verification
+- **V3:** Voting System
+- **V4:** Community Features (Comments, Tags)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+This project uses Google Antigravity IDE with multi-agent workflows. See `.agent/` for agent configurations.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Architecture](docs/ARCHITECTURE.md) - Technical decisions
+- [API](docs/API.md) - Endpoint documentation
+- [Business Proposal](docs/business/PROPOSAL.md) - Project proposal
+
+## License
+
+Private - Circus Community Use Only

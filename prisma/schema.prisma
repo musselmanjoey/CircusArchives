@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// V1 MVP Tables
+
+model Act {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  videos      Video[]
+
+  @@map("acts")
+}
+
+model Video {
+  id          String   @id @default(uuid())
+  youtubeUrl  String   @map("youtube_url")
+  youtubeId   String   @map("youtube_id")
+  title       String
+  year        Int
+  description String?
+  actId       String   @map("act_id")
+  act         Act      @relation(fields: [actId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Future relations (V2+)
+  // uploaderId String?  @map("uploader_id")
+  // uploader   User?    @relation(fields: [uploaderId], references: [id])
+  // votes      Vote[]
+  // comments   Comment[]
+  // tags       VideoTag[]
+  // performers VideoPerformer[]
+
+  @@map("videos")
+}
+
+// V2+ Tables (commented out for now)
+// model User {
+//   id            String   @id @default(uuid())
+//   email         String   @unique
+//   passwordHash  String   @map("password_hash")
+//   alumniVerified Boolean @default(false) @map("alumni_verified")
+//   createdAt     DateTime @default(now()) @map("created_at")
+//   updatedAt     DateTime @updatedAt @map("updated_at")
+// }
