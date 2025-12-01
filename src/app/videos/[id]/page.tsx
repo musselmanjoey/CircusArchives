@@ -53,7 +53,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
       </Link>
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <VideoPlayer videoId={video.youtubeId} title={video.title} />
+        <VideoPlayer youtubeId={video.youtubeId} title={video.title} />
 
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
