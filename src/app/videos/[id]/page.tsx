@@ -2,15 +2,38 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Button } from '@/components/ui/Button';
+import { prisma } from '@/lib/db';
+import type { Video } from '@/types';
 
 interface VideoPageProps {
   params: Promise<{ id: string }>;
 }
 
-// TODO: Fetch from database
-async function getVideo(id: string) {
-  // Placeholder - will be replaced with actual database query
-  return null;
+async function getVideo(id: string): Promise<Video | null> {
+  try {
+    const video = await prisma.video.findUnique({
+      where: { id },
+      include: { act: true },
+    });
+
+    if (!video) return null;
+
+    return {
+      id: video.id,
+      youtubeUrl: video.youtubeUrl,
+      youtubeId: video.youtubeId,
+      title: video.title,
+      year: video.year,
+      description: video.description || undefined,
+      actId: video.actId,
+      act: video.act,
+      createdAt: video.createdAt,
+      updatedAt: video.updatedAt,
+    };
+  } catch (error) {
+    console.error('Error fetching video:', error);
+    return null;
+  }
 }
 
 export default async function VideoPage({ params }: VideoPageProps) {
@@ -29,9 +52,40 @@ export default async function VideoPage({ params }: VideoPageProps) {
         </Button>
       </Link>
 
-      {/* Placeholder content until database is connected */}
-      <div className="text-center py-12">
-        <p className="text-gray-500">Video not found. Connect the database to view videos.</p>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <VideoPlayer videoId={video.youtubeId} title={video.title} />
+
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{video.title}</h1>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span className="font-medium">{video.year}</span>
+                <span>•</span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md">
+                  {video.act?.name}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {video.description && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Description</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">{video.description}</p>
+            </div>
+          )}
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              Added on {new Date(video.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

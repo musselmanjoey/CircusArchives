@@ -34,7 +34,10 @@ test.describe('Video Submission', () => {
     // Verify values are set
     await expect(page.getByLabel('YouTube URL')).toHaveValue('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
     await expect(page.getByLabel('Title')).toHaveValue('Rick Roll');
-    await expect(page.getByLabel('Act Category')).toHaveValue('1');
+    // Act Category value is a UUID, just verify it's not the disabled placeholder
+    const actValue = await page.getByLabel('Act Category').inputValue();
+    expect(actValue).toBeTruthy();
+    expect(actValue).not.toBe('');
 
     await page.getByRole('button', { name: 'Submit Video' }).click();
 
