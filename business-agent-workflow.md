@@ -1,3 +1,16 @@
+# Business Agent Workflow Setup for Antigravity
+
+## Overview
+
+This document covers setting up the **Business Plan Agent** in Google Antigravity for the Circus Video Archive project. The first task is competitive research on the existing FSU Flying High Circus digital presence.
+
+---
+
+## Workflow File
+
+**Location:** `.agent/workflows/business-plan.md`
+
+```markdown
 ---
 description: Research, analyze, and develop business documentation for the Circus Video Archive proposal
 ---
@@ -140,6 +153,19 @@ Use these themes throughout business documentation:
 
 ---
 
+## Research Commands
+
+When conducting web research, use these approaches:
+
+1. **Browser research** - Use Antigravity's browser integration to visit and analyze websites
+2. **Document findings** - Create markdown files in /docs/business/
+3. **Screenshot evidence** - Capture relevant screenshots as artifacts
+
+// turbo
+Run `mkdir -p docs/business` to ensure output directory exists
+
+---
+
 ## Document Templates
 
 ### Executive Summary Template
@@ -202,3 +228,109 @@ This workflow activates when you:
 - Ask about "competitive analysis" or "research existing circus websites"
 - Request help with "proposal" or "business documentation"
 - Ask to "analyze the FSU circus digital presence"
+```
+
+---
+
+## Initial Research Findings (From Web Search)
+
+Based on my research, here's what currently exists in the FSU Flying High Circus digital landscape:
+
+### Official Website (circus.fsu.edu)
+
+**What exists:**
+- Basic information pages (About, Performances, Students, Ticketing)
+- 75th Anniversary celebration page with event listings
+- Oral History Project page (audio/text interviews with alumni)
+- News about returning to full operations after tornado disruption for 2025-2026
+
+**Key quote from their site:** "After a very long and challenging year without the big top tent, the circus prepares to return to full operations this fall."
+
+**Gaps identified:**
+- No searchable video archive
+- No way to browse historical performances
+- Limited alumni engagement features
+- Performance history not organized by year/act
+
+### Alumni Website (fsucircusalumni.com)
+
+**What exists:**
+- Basic alumni profiles with "favorite memories"
+- Contact information for alumni association
+- Connection to Oral History Project
+
+**Gaps identified:**
+- No video content
+- No way to search or browse performances
+- Limited interactivity
+- No voting or recognition system
+
+### University Archives
+
+**What exists:**
+- DigiNole has some digitized circus records (programs from 1959, etc.)
+- FSU Archives has physical collections (photos, programs, documents)
+- Florida Memory has some historical photos
+- Alumni Association Flying High Circus Collection exists
+
+**Gaps identified:**
+- Scattered across multiple systems
+- Not easily accessible to general alumni
+- Focused on documents/photos, not video
+- No community contribution mechanism
+
+### Oral History Project
+
+**What exists:**
+- Audio/text interviews with alumni
+- Run by volunteers (alumni who "do it purely for the fun of it")
+- Connected to 75th anniversary celebration
+
+**Opportunity:**
+- Your video archive complements this perfectly
+- Video adds dimension that audio alone can't capture
+- Same volunteer-driven model could work for video collection
+
+### Social Media
+
+**What exists:**
+- Active Instagram and Facebook presence
+- Some video content posted
+- Current show promotion focus
+
+**Gaps identified:**
+- Not organized as searchable archive
+- Historical content gets buried
+- No way to find specific years/acts/performers
+
+---
+
+## Your Value Proposition Summary
+
+| They Have | You Add |
+|-----------|---------|
+| Oral histories (audio) | Video archive |
+| Static photos in archives | Searchable, browsable collection |
+| Current show promotion | Historical preservation |
+| Alumni profiles | Community voting and recognition |
+| Scattered records | Centralized, organized platform |
+
+---
+
+## Suggested First Task for Business Agent
+
+Once you set up this workflow in Antigravity, try this prompt:
+
+> "Research the current FSU Flying High Circus digital presence. Visit their official website, alumni site, and document what video/archive capabilities they currently have. Create a competitive analysis document identifying gaps that our Circus Video Archive could fill."
+
+The agent will use browser integration to visit the sites, analyze them, and create documentation in `/docs/business/`.
+
+---
+
+## File to Create
+
+Copy this workflow file to your project:
+
+**Path:** `.agent/workflows/business-plan.md`
+
+The content between the first set of triple backticks above (starting with `---` and `description:`) is what goes in that file.
