@@ -26,7 +26,10 @@ async function getVideo(id: string): Promise<Video | null> {
       year: video.year,
       description: video.description || undefined,
       actId: video.actId,
-      act: video.act,
+      act: {
+        ...video.act,
+        description: video.act.description || undefined,
+      },
       createdAt: video.createdAt,
       updatedAt: video.updatedAt,
     };
