@@ -54,6 +54,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
+              id="firstName"
               label="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -62,6 +63,7 @@ export default function LoginPage() {
               disabled={isLoading}
             />
             <Input
+              id="lastName"
               label="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
