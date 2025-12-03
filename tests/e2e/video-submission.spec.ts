@@ -29,7 +29,8 @@ async function cleanupTestVideos(page: Page) {
 
     if (data.data && data.data.length > 0) {
       for (const video of data.data) {
-        if (video.title.startsWith(TEST_VIDEO_PREFIX)) {
+        // Match by description since title is now auto-generated
+        if (video.description?.includes(TEST_VIDEO_PREFIX)) {
           await deleteTestVideo(page, video.id);
         }
       }
@@ -55,8 +56,15 @@ test.describe('Video Submission', () => {
     test('should display submission form', async ({ page }) => {
       await expect(page.getByRole('heading', { name: 'Submit a Video' })).toBeVisible();
       await expect(page.getByLabel('YouTube URL')).toBeVisible();
-      await expect(page.getByLabel('Title')).toBeVisible();
+      // Title field removed - now auto-generated from Act + Year
+      await expect(page.getByLabel('Year')).toBeVisible();
+      await expect(page.getByLabel('Act Category')).toBeVisible();
       await expect(page.getByLabel('Description (optional)')).toBeVisible();
+    });
+
+    test('should NOT have a title field (auto-generated)', async ({ page }) => {
+      // Title is now auto-generated from Act + Year per V2 spec
+      await expect(page.getByLabel('Title')).not.toBeVisible();
     });
 
     test('should show submitter name', async ({ page }) => {
@@ -65,7 +73,7 @@ test.describe('Video Submission', () => {
 
     test('should show validation error for invalid URL', async ({ page }) => {
       await page.getByLabel('YouTube URL').fill('invalid-url');
-      await page.getByLabel('Title').fill('Test Video');
+      await page.getByLabel('Act Category').selectOption({ index: 1 }); // Select first act
       await page.getByRole('button', { name: 'Submit Video' }).click();
 
       // Should still be on the same page with the input visible
@@ -74,17 +82,17 @@ test.describe('Video Submission', () => {
     });
 
     test('should submit valid video successfully', async ({ page }) => {
-      // Use a unique title with test prefix for easy cleanup
-      const uniqueTitle = `${TEST_VIDEO_PREFIX}${Date.now()}`;
+      // Description with test prefix for easy cleanup
+      const uniqueDescription = `${TEST_VIDEO_PREFIX}${Date.now()} - will be auto-deleted`;
 
       await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      await page.getByLabel('Title').fill(uniqueTitle);
-      await page.getByLabel('Description (optional)').fill('Test description for E2E - will be auto-deleted');
+      // No Title field - it's auto-generated from Act + Year
+      await page.getByLabel('Year').selectOption('2024');
       await page.getByLabel('Act Category').selectOption({ label: 'Juggling' });
+      await page.getByLabel('Description (optional)').fill(uniqueDescription);
 
       // Verify values are set
       await expect(page.getByLabel('YouTube URL')).toHaveValue('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      await expect(page.getByLabel('Title')).toHaveValue(uniqueTitle);
 
       // Act Category value is a UUID, just verify it's not empty
       const actValue = await page.getByLabel('Act Category').inputValue();
@@ -103,6 +111,45 @@ test.describe('Video Submission', () => {
       await expect(page.getByText('Redirecting to videos page...')).toBeVisible();
 
       // Video will be cleaned up by afterEach hook
+    });
+
+    test('should auto-generate title as "Act Year"', async ({ page }) => {
+      const uniqueDescription = `${TEST_VIDEO_PREFIX}autotitle_${Date.now()}`;
+
+      await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      await page.getByLabel('Year').selectOption('2023');
+      await page.getByLabel('Act Category').selectOption({ label: 'Flying Trapeze' });
+      await page.getByLabel('Description (optional)').fill(uniqueDescription);
+
+      await page.getByRole('button', { name: 'Submit Video' }).click();
+      await expect(page.getByText('Video submitted successfully!')).toBeVisible({ timeout: 10000 });
+
+      // Wait for redirect
+      await page.waitForURL('/videos', { timeout: 10000 });
+
+      // Get all videos and find the one we just created by checking the most recent ones
+      const response = await page.request.get('/api/videos?limit=10');
+      const data = await response.json();
+
+      // Find video by description (search might not work immediately)
+      let createdVideo = data.data.find(
+        (v: { description?: string }) => v.description === uniqueDescription
+      );
+
+      // If not found by description, try by title (Flying Trapeze 2023)
+      if (!createdVideo) {
+        createdVideo = data.data.find(
+          (v: { title: string }) => v.title === 'Flying Trapeze 2023'
+        );
+      }
+
+      expect(createdVideo).toBeDefined();
+
+      // Title should be auto-generated as "Flying Trapeze 2023"
+      expect(createdVideo.title).toBe('Flying Trapeze 2023');
+
+      // Cleanup
+      await page.request.delete(`/api/videos/${createdVideo.id}`);
     });
 
     test('should require all mandatory fields', async ({ page }) => {
@@ -131,7 +178,7 @@ test.describe('Video Submission', () => {
 
       // Form fields should not be visible
       await expect(page.getByLabel('YouTube URL')).not.toBeVisible();
-      await expect(page.getByLabel('Title')).not.toBeVisible();
+      await expect(page.getByLabel('Act Category')).not.toBeVisible();
     });
   });
 });
