@@ -13,7 +13,21 @@ async function getVideo(id: string): Promise<Video | null> {
   try {
     const video = await prisma.video.findUnique({
       where: { id },
-      include: { act: true, uploader: true },
+      include: {
+        act: true,
+        uploader: true,
+        performers: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!video) return null;
@@ -40,6 +54,13 @@ async function getVideo(id: string): Promise<Video | null> {
         createdAt: video.uploader.createdAt,
         updatedAt: video.uploader.updatedAt,
       } : undefined,
+      performers: video.performers.map((vp) => ({
+        id: vp.id,
+        videoId: vp.videoId,
+        userId: vp.userId,
+        user: vp.user,
+        createdAt: vp.createdAt,
+      })),
       createdAt: video.createdAt,
       updatedAt: video.updatedAt,
     };
@@ -81,6 +102,22 @@ export default async function VideoPage({ params }: VideoPageProps) {
               </div>
             </div>
           </div>
+
+          {video.performers && video.performers.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Performers</h2>
+              <div className="flex flex-wrap gap-2">
+                {video.performers.map((vp) => (
+                  <span
+                    key={vp.id}
+                    className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
+                  >
+                    {vp.user.firstName} {vp.user.lastName}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {video.description && (
             <div className="mt-6">

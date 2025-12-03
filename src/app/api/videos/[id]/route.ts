@@ -21,6 +21,17 @@ export async function GET(
             lastName: true,
           },
         },
+        performers: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create video with uploader
+    // Create video with uploader and performers
     const video = await prisma.video.create({
       data: {
         youtubeUrl: body.youtubeUrl,
@@ -110,8 +110,29 @@ export async function POST(request: NextRequest) {
         description: body.description?.trim() || null,
         actId: body.actId,
         uploaderId: session.user.id,
+        performers: body.performerIds?.length
+          ? {
+              create: body.performerIds.map((userId: string) => ({
+                userId,
+              })),
+            }
+          : undefined,
       },
-      include: { act: true, uploader: true },
+      include: {
+        act: true,
+        uploader: true,
+        performers: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return NextResponse.json<ApiResponse<Video>>(

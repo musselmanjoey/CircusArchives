@@ -34,11 +34,13 @@ model Video {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // V2: Performer tagging
+  performers  VideoPerformer[]
+
   // Future relations (V3+)
   // votes      Vote[]
   // comments   Comment[]
   // tags       VideoTag[]
-  // performers VideoPerformer[]
 
   @@map("videos")
 }
@@ -60,7 +62,8 @@ model User {
   sessions      Session[]
 
   // App relations
-  videos        Video[]   @relation("UploadedVideos")
+  videos        Video[]          @relation("UploadedVideos")
+  performances  VideoPerformer[]
 
   @@map("users")
 }
@@ -94,4 +97,17 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+// V2: Video Performer Tagging
+model VideoPerformer {
+  id        String   @id @default(uuid())
+  videoId   String   @map("video_id")
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([videoId, userId])
+  @@map("video_performers")
 }
