@@ -16,7 +16,6 @@ export interface VideoSubmitFormProps {
 
 export interface VideoFormData {
   youtubeUrl: string;
-  title: string;
   year: number;
   description: string;
   actId: string;
@@ -28,7 +27,6 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [formData, setFormData] = useState<VideoFormData>({
     youtubeUrl: '',
-    title: '',
     year: new Date().getFullYear(),
     description: '',
     actId: '',
@@ -49,10 +47,6 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
       newErrors.youtubeUrl = 'YouTube URL is required';
     } else if (!isValidYouTubeUrl(formData.youtubeUrl)) {
       newErrors.youtubeUrl = 'Please enter a valid YouTube URL';
-    }
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
     }
 
     if (!formData.actId) {
@@ -90,15 +84,6 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
         value={formData.youtubeUrl}
         onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
         error={errors.youtubeUrl}
-      />
-
-      <Input
-        id="title"
-        label="Title"
-        placeholder="Enter video title"
-        value={formData.title}
-        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        error={errors.title}
       />
 
       <div className="grid grid-cols-2 gap-4">

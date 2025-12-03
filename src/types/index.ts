@@ -44,7 +44,6 @@ export interface Video {
 
 export interface VideoCreateInput {
   youtubeUrl: string;
-  title: string;
   year: number;
   description?: string;
   actId: string;
@@ -72,6 +71,7 @@ export interface VideoFilters {
   actId?: string;
   year?: number;
   search?: string;
+  performerId?: string;
 }
 
 export interface PaginationParams {
