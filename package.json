@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "postinstall": "prisma generate",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
