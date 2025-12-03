@@ -248,18 +248,19 @@ test.describe('API Endpoints', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create a video via the form (so we own it)
+      // Create a video via the form (so we own it) - no title field, it's auto-generated
+      const uniqueDescription = `DELETE_TEST_VIDEO_${Date.now()}`;
       await page.goto('/submit');
       await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      await page.locator('#title').fill('DELETE_TEST_VIDEO_' + Date.now());
       await page.locator('#actId').selectOption(actId);
+      await page.getByLabel('Description (optional)').fill(uniqueDescription);
       await page.getByRole('button', { name: 'Submit Video' }).click();
 
       // Wait for success
       await page.waitForSelector('text=Video submitted successfully!', { timeout: 10000 });
 
       // Get the video we just created
-      const videosResponse = await page.request.get('/api/videos?search=DELETE_TEST_VIDEO');
+      const videosResponse = await page.request.get(`/api/videos?search=${uniqueDescription}`);
       const videosData = await videosResponse.json();
       const ourVideo = videosData.data[0];
 

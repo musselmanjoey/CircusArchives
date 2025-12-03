@@ -555,9 +555,9 @@ test.describe('Performer Tagging', () => {
       // Go to submit page
       await page.goto('/submit');
 
-      // Fill in video details
+      // Fill in video details - no title field, it's auto-generated
       await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      await page.locator('#title').fill(`${TEST_VIDEO_PREFIX}UISubmit${Date.now()}`);
+      await page.getByLabel('Description (optional)').fill(`${TEST_VIDEO_PREFIX}UISubmit${Date.now()}`);
 
       // Get act options and select first one
       const actSelect = page.locator('#actId');
@@ -582,10 +582,10 @@ test.describe('Performer Tagging', () => {
       // Go to submit page
       await page.goto('/submit');
 
-      // Fill in video details
+      // Fill in video details - no title field, it's auto-generated
       await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      const videoTitle = `${TEST_VIDEO_PREFIX}NewPerf${Date.now()}`;
-      await page.locator('#title').fill(videoTitle);
+      const videoDescription = `${TEST_VIDEO_PREFIX}NewPerf${Date.now()}`;
+      await page.getByLabel('Description (optional)').fill(videoDescription);
 
       // Select act
       const actSelect = page.locator('#actId');
