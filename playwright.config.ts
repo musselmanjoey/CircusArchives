@@ -6,10 +6,27 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  // Use multiple reporters: HTML for detailed reports, list for CI output
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+      ]
+    : 'html',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    // Screenshot on failure for debugging
+    screenshot: 'only-on-failure',
+    // Video on failure for debugging
+    video: 'retain-on-failure',
+  },
+  // Global timeout for tests
+  timeout: 30000,
+  // Expect timeout
+  expect: {
+    timeout: 10000,
   },
   projects: [
     {
@@ -30,8 +47,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120000, // 2 minutes to start server
   },
 });

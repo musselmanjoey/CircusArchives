@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  # NextAuth requires these for build
+  NEXTAUTH_URL: http://localhost:3000
+  NEXTAUTH_SECRET: test-secret-for-ci-only
+
 jobs:
   # ============================================
   # JOB 1: Lint and Type Check
@@ -59,14 +64,31 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   # ============================================
-  # JOB 3: E2E Tests (optional - requires test DB)
+  # JOB 3: E2E Tests with PostgreSQL
   # ============================================
   test:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: build
-    # Skip tests if no test database configured
-    if: ${{ vars.RUN_E2E_TESTS == 'true' }}
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: circus_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/circus_test
+
     steps:
       - uses: actions/checkout@v4
 
@@ -79,25 +101,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Database Migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed Database
+        run: npx prisma db seed
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
       - name: Build Application
         run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
       - name: Run Playwright Tests
         run: npx playwright test --project=chromium
-        env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 7
+
+      - name: Upload Test Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-screenshots
+          path: test-results/
           retention-days: 7
 
   # ============================================
@@ -106,7 +141,7 @@ jobs:
   migrate:
     name: Database Migration
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, test]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
@@ -131,11 +166,28 @@ jobs:
   deploy-ready:
     name: Ready for Deploy
     runs-on: ubuntu-latest
-    needs: [lint, build, migrate]
+    needs: [lint, build, test, migrate]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
       - name: Deployment Status
         run: |
           echo "All checks passed!"
+          echo "E2E tests passed"
           echo "Database migrations applied"
           echo "Vercel will auto-deploy from main branch"
+
+  # ============================================
+  # JOB 6: PR Check (for pull requests)
+  # ============================================
+  pr-ready:
+    name: PR Ready
+    runs-on: ubuntu-latest
+    needs: [lint, build, test]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: PR Status
+        run: |
+          echo "All PR checks passed!"
+          echo "Lint: OK"
+          echo "Build: OK"
+          echo "E2E Tests: OK"

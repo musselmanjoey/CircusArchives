@@ -1,0 +1,66 @@
+name: Production Smoke Tests
+
+on:
+  # Run after deployment (can be triggered manually or by deployment webhook)
+  workflow_dispatch:
+    inputs:
+      environment_url:
+        description: 'URL to test (e.g., https://your-app.vercel.app)'
+        required: true
+        default: 'https://circus-archives.vercel.app'
+
+  # Optionally run on schedule to monitor production
+  schedule:
+    # Run every day at 6 AM UTC
+    - cron: '0 6 * * *'
+
+env:
+  NEXTAUTH_URL: ${{ github.event.inputs.environment_url || 'https://circus-archives.vercel.app' }}
+  NEXTAUTH_SECRET: smoke-test-secret
+
+jobs:
+  smoke-tests:
+    name: Production Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Smoke Tests
+        run: npx playwright test tests/e2e/smoke.spec.ts --project=chromium
+        env:
+          # Override base URL to test production
+          PLAYWRIGHT_TEST_BASE_URL: ${{ github.event.inputs.environment_url || 'https://circus-archives.vercel.app' }}
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload Screenshots on Failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-test-screenshots
+          path: test-results/
+          retention-days: 7
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "::error::Production smoke tests failed! Check the test report for details."
+          echo "Environment tested: ${{ github.event.inputs.environment_url || 'https://circus-archives.vercel.app' }}"
