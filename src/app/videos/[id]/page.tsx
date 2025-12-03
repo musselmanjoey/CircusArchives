@@ -13,7 +13,7 @@ async function getVideo(id: string): Promise<Video | null> {
   try {
     const video = await prisma.video.findUnique({
       where: { id },
-      include: { act: true },
+      include: { act: true, uploader: true },
     });
 
     if (!video) return null;
@@ -30,6 +30,16 @@ async function getVideo(id: string): Promise<Video | null> {
         ...video.act,
         description: video.act.description || undefined,
       },
+      uploaderId: video.uploaderId || undefined,
+      uploader: video.uploader ? {
+        id: video.uploader.id,
+        firstName: video.uploader.firstName,
+        lastName: video.uploader.lastName,
+        email: video.uploader.email || undefined,
+        image: video.uploader.image || undefined,
+        createdAt: video.uploader.createdAt,
+        updatedAt: video.uploader.updatedAt,
+      } : undefined,
       createdAt: video.createdAt,
       updatedAt: video.updatedAt,
     };
@@ -86,6 +96,9 @@ export default async function VideoPage({ params }: VideoPageProps) {
                 month: 'long',
                 day: 'numeric',
               })}
+              {video.uploader && (
+                <span> by <span className="font-medium text-gray-700">{video.uploader.firstName} {video.uploader.lastName}</span></span>
+              )}
             </p>
           </div>
         </div>

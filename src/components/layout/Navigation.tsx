@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/Button';
 
 const navItems = [
   { href: '/videos', label: 'Browse' },
@@ -11,6 +13,7 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
 
   return (
     <nav className="flex items-center space-x-6">
@@ -26,6 +29,29 @@ export function Navigation() {
           {item.label}
         </Link>
       ))}
+
+      {status === 'loading' ? (
+        <span className="text-sm text-gray-400">...</span>
+      ) : session?.user ? (
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600">
+            {session.user.name}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => signOut({ callbackUrl: '/' })}
+          >
+            Sign Out
+          </Button>
+        </div>
+      ) : (
+        <Link href="/login">
+          <Button variant="primary" size="sm">
+            Sign In
+          </Button>
+        </Link>
+      )}
     </nav>
   );
 }

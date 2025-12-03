@@ -1,3 +1,14 @@
+// User types
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  image?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Video types
 export interface Video {
   id: string;
@@ -8,6 +19,8 @@ export interface Video {
   description?: string;
   actId: string;
   act?: Act;
+  uploaderId?: string;
+  uploader?: User;
   createdAt: Date;
   updatedAt: Date;
 }
