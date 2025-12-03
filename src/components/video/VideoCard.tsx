@@ -24,9 +24,13 @@ export function VideoCard({ video }: VideoCardProps) {
           </div>
         </div>
         <CardContent className="p-4">
-          <h3 className="font-semibold text-gray-900 line-clamp-2">{video.title}</h3>
-          {video.act && (
-            <p className="text-sm text-gray-500 mt-1">{video.act.name}</p>
+          <h3 className="font-semibold text-gray-900 line-clamp-1">
+            {video.act?.name || 'Unknown Act'}
+          </h3>
+          {video.performers && video.performers.length > 0 && (
+            <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+              {video.performers.map((vp) => `${vp.user.firstName} ${vp.user.lastName}`).join(', ')}
+            </p>
           )}
         </CardContent>
       </Card>

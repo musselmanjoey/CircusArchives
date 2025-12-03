@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const actId = searchParams.get('actId');
     const year = searchParams.get('year');
     const search = searchParams.get('search');
+    const performerId = searchParams.get('performerId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
 
@@ -23,17 +24,36 @@ export async function GET(request: NextRequest) {
       where.year = parseInt(year);
     }
 
+    if (performerId) {
+      where.performers = {
+        some: { userId: performerId },
+      };
+    }
+
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
+        { act: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
     const [videos, total] = await Promise.all([
       prisma.video.findMany({
         where,
-        include: { act: true },
+        include: {
+          act: true,
+          performers: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -86,13 +106,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    if (!body.title?.trim()) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
-    }
-
     if (!body.actId) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Act category is required' },
@@ -100,12 +113,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get act name to generate title
+    const act = await prisma.act.findUnique({
+      where: { id: body.actId },
+      select: { name: true },
+    });
+
+    if (!act) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Invalid act category' },
+        { status: 400 }
+      );
+    }
+
+    // Generate title from act + year
+    const title = `${act.name} ${body.year}`;
+
     // Create video with uploader and performers
     const video = await prisma.video.create({
       data: {
         youtubeUrl: body.youtubeUrl,
         youtubeId,
-        title: body.title.trim(),
+        title,
         year: body.year,
         description: body.description?.trim() || null,
         actId: body.actId,

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { VideoGrid } from '@/components/video/VideoGrid';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FilterPanel } from '@/components/search/FilterPanel';
-import type { Video, VideoFilters, Act, ApiResponse, PaginatedResponse } from '@/types';
+import type { Video, VideoFilters, Act, ApiResponse, PaginatedResponse, Performer } from '@/types';
 import type { SelectOption } from '@/components/ui/Select';
 
 export default function VideosPage() {
@@ -12,29 +12,45 @@ export default function VideosPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<Video[]>([]);
   const [acts, setActs] = useState<SelectOption[]>([]);
+  const [performers, setPerformers] = useState<SelectOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch acts
+  // Fetch acts and performers
   useEffect(() => {
-    const fetchActs = async () => {
+    const fetchFilters = async () => {
       try {
-        const response = await fetch('/api/acts');
-        if (!response.ok) throw new Error('Failed to fetch acts');
+        const [actsResponse, performersResponse] = await Promise.all([
+          fetch('/api/acts'),
+          fetch('/api/users'),
+        ]);
 
-        const result: ApiResponse<Act[]> = await response.json();
-        if (result.data) {
-          const actOptions: SelectOption[] = result.data.map((act) => ({
-            value: act.id,
-            label: act.name,
-          }));
-          setActs(actOptions);
+        if (actsResponse.ok) {
+          const actsResult: ApiResponse<Act[]> = await actsResponse.json();
+          if (actsResult.data) {
+            const actOptions: SelectOption[] = actsResult.data.map((act) => ({
+              value: act.id,
+              label: act.name,
+            }));
+            setActs(actOptions);
+          }
+        }
+
+        if (performersResponse.ok) {
+          const performersResult: ApiResponse<Performer[]> = await performersResponse.json();
+          if (performersResult.data) {
+            const performerOptions: SelectOption[] = performersResult.data.map((p) => ({
+              value: p.id,
+              label: `${p.firstName} ${p.lastName}`,
+            }));
+            setPerformers(performerOptions);
+          }
         }
       } catch (error) {
-        console.error('Error fetching acts:', error);
+        console.error('Error fetching filters:', error);
       }
     };
 
-    fetchActs();
+    fetchFilters();
   }, []);
 
   // Fetch videos based on filters
@@ -46,6 +62,7 @@ export default function VideosPage() {
         if (filters.actId) params.append('actId', filters.actId);
         if (filters.year) params.append('year', filters.year.toString());
         if (filters.search) params.append('search', filters.search);
+        if (filters.performerId) params.append('performerId', filters.performerId);
 
         const response = await fetch(`/api/videos?${params.toString()}`);
         if (!response.ok) throw new Error('Failed to fetch videos');
@@ -79,6 +96,7 @@ export default function VideosPage() {
           <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
           <FilterPanel
             acts={acts}
+            performers={performers}
             filters={filters}
             onFilterChange={handleFilterChange}
           />

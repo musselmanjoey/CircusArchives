@@ -17,6 +17,7 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +51,11 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, selectedPerformers]);
 
+  // Reset highlighted index when results change
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [searchResults]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,8 +72,36 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
     onChange([...selectedPerformers, performer]);
     setSearchQuery('');
     setShowDropdown(false);
+    setHighlightedIndex(-1);
     inputRef.current?.focus();
   }, [selectedPerformers, onChange]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
+          handleSelectPerformer(searchResults[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowDropdown(false);
+        setHighlightedIndex(-1);
+        break;
+    }
+  }, [showDropdown, searchResults, highlightedIndex, handleSelectPerformer]);
 
   const handleRemovePerformer = useCallback((performerId: string) => {
     onChange(selectedPerformers.filter((p) => p.id !== performerId));
@@ -138,6 +172,7 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setShowDropdown(true)}
+          onKeyDown={handleKeyDown}
         />
 
         {/* Dropdown */}
@@ -146,13 +181,18 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
             {isLoading ? (
               <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
             ) : searchResults.length > 0 ? (
-              <ul>
-                {searchResults.map((user) => (
-                  <li key={user.id}>
+              <ul role="listbox">
+                {searchResults.map((user, index) => (
+                  <li key={user.id} role="option" aria-selected={index === highlightedIndex}>
                     <button
                       type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                      className={`w-full text-left px-3 py-2 text-sm focus:outline-none ${
+                        index === highlightedIndex
+                          ? 'bg-blue-100 text-blue-900'
+                          : 'hover:bg-blue-50'
+                      }`}
                       onClick={() => handleSelectPerformer(user)}
+                      onMouseEnter={() => setHighlightedIndex(index)}
                     >
                       {user.firstName} {user.lastName}
                     </button>
