@@ -4,8 +4,10 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
+import { PerformerSelector } from '@/components/video/PerformerSelector';
 import { isValidYouTubeUrl } from '@/lib/youtube';
 import { getYearRange } from '@/lib/utils';
+import type { Performer } from '@/types';
 
 export interface VideoSubmitFormProps {
   acts: SelectOption[];
@@ -18,6 +20,7 @@ export interface VideoFormData {
   year: number;
   description: string;
   actId: string;
+  performerIds: string[];
 }
 
 export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
@@ -29,7 +32,9 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
     year: new Date().getFullYear(),
     description: '',
     actId: '',
+    performerIds: [],
   });
+  const [selectedPerformers, setSelectedPerformers] = useState<Performer[]>([]);
 
   const years = getYearRange(1990);
   const yearOptions: SelectOption[] = years.map((year) => ({
@@ -56,6 +61,11 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePerformersChange = (performers: Performer[]) => {
+    setSelectedPerformers(performers);
+    setFormData({ ...formData, performerIds: performers.map((p) => p.id) });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -110,6 +120,11 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
           error={errors.actId}
         />
       </div>
+
+      <PerformerSelector
+        selectedPerformers={selectedPerformers}
+        onChange={handlePerformersChange}
+      />
 
       <div className="w-full">
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">

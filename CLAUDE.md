@@ -25,14 +25,16 @@ A YouTube-based video archive platform for FSU Flying High Circus alumni to pres
 
 Features grouped to minimize context switching:
 
-| Version | Focus | Features |
-|---------|-------|----------|
-| **V1 (Current)** | Core Archive MVP | YouTube embedding, video submission, browse/search, act categorization |
-| V2 | Authentication | Email invites, user registration, alumni verification |
-| V3 | Voting System | One vote per user, rankings by act, yearly aggregation |
-| V4 | Community Features | Comments, trick tagging, performer identification |
+| Version | Focus | Features | Status |
+|---------|-------|----------|--------|
+| V1 | Core Archive MVP | YouTube embedding, video submission, browse/search, act categorization | ✅ Done |
+| V2 | Authentication + Performer Tagging | Name-based login, protected routes, tag performers on videos | 🔄 In Progress |
+| V3 | Voting System | One vote per user, rankings by act, yearly aggregation | Planned |
+| V4 | Community Features | Comments, trick tagging | Planned |
+| V5 | Advanced Auth | Facebook OAuth, email invites, alumni verification | Planned |
+| V6 | User Management | Profile merging, name matching, duplicate handling | Planned |
 
-**Important:** Only implement V1 features unless explicitly asked otherwise.
+**Important:** Check the current version status before implementing features.
 
 ---
 

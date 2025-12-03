@@ -9,6 +9,22 @@ export interface User {
   updatedAt: Date;
 }
 
+// Performer (simplified user for tagging)
+export interface Performer {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+// Video Performer join
+export interface VideoPerformer {
+  id: string;
+  videoId: string;
+  userId: string;
+  user: Performer;
+  createdAt: Date;
+}
+
 // Video types
 export interface Video {
   id: string;
@@ -21,6 +37,7 @@ export interface Video {
   act?: Act;
   uploaderId?: string;
   uploader?: User;
+  performers?: VideoPerformer[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +48,7 @@ export interface VideoCreateInput {
   year: number;
   description?: string;
   actId: string;
+  performerIds?: string[];
 }
 
 // Act types

@@ -58,15 +58,47 @@ This document outlines all features implemented in V2 that need testing before e
 
 ---
 
+## V2 Features (Performer Tagging)
+
+### User Search API
+| Test | Endpoint | Expected Behavior |
+|------|----------|-------------------|
+| GET /api/users with query | GET /api/users?q=John | Returns matching users by name |
+| GET /api/users empty query | GET /api/users | Returns all users (up to 20) |
+| POST /api/users requires auth | POST without session | Returns 401 "Authentication required" |
+| POST /api/users creates user | POST with firstName/lastName | Creates new user, returns user data |
+| POST /api/users finds existing | POST with existing name | Returns existing user (no duplicate) |
+
+### Performer Selector UI
+| Test | Path | Expected Behavior |
+|------|------|-------------------|
+| Performer field visible | `/submit` (logged in) | Shows "Performers (optional)" field |
+| Search shows results | Type name in performer field | Dropdown shows matching users |
+| Select performer | Click search result | Adds performer chip to selection |
+| Remove performer | Click X on chip | Removes performer from selection |
+| Add new performer | Click "+ Add new performer" | Shows first/last name form |
+| Create new performer | Fill and submit new performer form | Creates user, adds to selection |
+| Submit with performers | Submit video with performers | Video saved with performer associations |
+
+### Video Detail Page Performers
+| Test | Path | Expected Behavior |
+|------|------|-------------------|
+| Shows performers | `/videos/[id]` with performers | Displays "Performers" section with names |
+| No performers section | `/videos/[id]` without performers | Performers section not shown |
+
+---
+
 ## Database Schema (V2)
 
 ### New Tables
 - `users` - id, first_name, last_name, email, image, timestamps
 - `accounts` - OAuth account links (for future Facebook)
 - `sessions` - Session tokens (for DB sessions, not used with JWT)
+- `video_performers` - video_id, user_id, created_at (many-to-many join table)
 
 ### Updated Tables
 - `videos.uploader_id` - Optional FK to users table
+- `videos` now has `performers` relation through video_performers
 
 ---
 
