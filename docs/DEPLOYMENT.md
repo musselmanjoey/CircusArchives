@@ -46,10 +46,12 @@
 
 ### Vercel (Settings → Environment Variables)
 
-| Variable | Value |
-|----------|-------|
-| `DATABASE_URL` | Railway public connection string |
-| `NEXT_PUBLIC_APP_URL` | `https://flyinghighcircusarchives.com` |
+| Variable | Value | Required |
+|----------|-------|----------|
+| `DATABASE_URL` | Railway public connection string | Yes |
+| `AUTH_SECRET` | NextAuth.js secret (generate with `openssl rand -base64 32`) | Yes |
+| `AUTH_TRUST_HOST` | `true` | Yes (production) |
+| `NEXT_PUBLIC_APP_URL` | `https://flyinghighcircusarchives.com` | Optional |
 
 ### GitHub Secrets (Settings → Secrets → Actions)
 
@@ -62,6 +64,7 @@
 Use `.env` file (gitignored):
 ```env
 DATABASE_URL="postgresql://postgres:password@localhost:5432/circus_archive"
+AUTH_SECRET="your-dev-secret-here"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
