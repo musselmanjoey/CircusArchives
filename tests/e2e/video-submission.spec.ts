@@ -1,5 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
 
+// Prefix for test videos - makes them easy to identify and clean up
+const TEST_VIDEO_PREFIX = 'E2E_TEST_VIDEO_';
+
 // Helper function to log in before tests that require authentication
 async function loginAsTestUser(page: Page, firstName = 'Video', lastName = 'Submitter') {
   await page.goto('/login');
@@ -9,12 +12,44 @@ async function loginAsTestUser(page: Page, firstName = 'Video', lastName = 'Subm
   await expect(page).toHaveURL('/', { timeout: 10000 });
 }
 
+// Helper function to delete a test video by ID
+async function deleteTestVideo(page: Page, videoId: string) {
+  try {
+    await page.request.delete(`/api/videos/${videoId}`);
+  } catch {
+    // Ignore errors - video may already be deleted or we may not have permission
+  }
+}
+
+// Helper function to find and delete test videos created during this test run
+async function cleanupTestVideos(page: Page) {
+  try {
+    const response = await page.request.get(`/api/videos?search=${TEST_VIDEO_PREFIX}&limit=100`);
+    const data = await response.json();
+
+    if (data.data && data.data.length > 0) {
+      for (const video of data.data) {
+        if (video.title.startsWith(TEST_VIDEO_PREFIX)) {
+          await deleteTestVideo(page, video.id);
+        }
+      }
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
 test.describe('Video Submission', () => {
   test.describe('Authenticated User', () => {
     test.beforeEach(async ({ page }) => {
       // Log in before each test
       await loginAsTestUser(page);
       await page.goto('/submit');
+    });
+
+    // Clean up any test videos after each test
+    test.afterEach(async ({ page }) => {
+      await cleanupTestVideos(page);
     });
 
     test('should display submission form', async ({ page }) => {
@@ -39,12 +74,12 @@ test.describe('Video Submission', () => {
     });
 
     test('should submit valid video successfully', async ({ page }) => {
-      // Use a unique title to avoid duplicates in test runs
-      const uniqueTitle = `Test Video ${Date.now()}`;
+      // Use a unique title with test prefix for easy cleanup
+      const uniqueTitle = `${TEST_VIDEO_PREFIX}${Date.now()}`;
 
       await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       await page.getByLabel('Title').fill(uniqueTitle);
-      await page.getByLabel('Description (optional)').fill('Test description for E2E');
+      await page.getByLabel('Description (optional)').fill('Test description for E2E - will be auto-deleted');
       await page.getByLabel('Act Category').selectOption({ label: 'Juggling' });
 
       // Verify values are set
@@ -66,6 +101,8 @@ test.describe('Video Submission', () => {
 
       await expect(page.getByText('Video submitted successfully!')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('Redirecting to videos page...')).toBeVisible();
+
+      // Video will be cleaned up by afterEach hook
     });
 
     test('should require all mandatory fields', async ({ page }) => {

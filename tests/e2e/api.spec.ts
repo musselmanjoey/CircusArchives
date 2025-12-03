@@ -181,4 +181,101 @@ test.describe('API Endpoints', () => {
       }
     });
   });
+
+  test.describe('Video Delete API', () => {
+    test('DELETE /api/videos/[id] should require authentication', async ({ request }) => {
+      const response = await request.delete('/api/videos/some-video-id');
+
+      expect(response.status()).toBe(401);
+
+      const data = await response.json();
+      expect(data.error).toBe('Authentication required');
+    });
+
+    test('DELETE /api/videos/[id] should return 404 for non-existent video', async ({ page, request }) => {
+      // Log in first to get authenticated session
+      await page.goto('/login');
+      await page.locator('#firstName').fill('Delete');
+      await page.locator('#lastName').fill('Tester');
+      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.waitForURL('/', { timeout: 10000 });
+
+      // Now try to delete a non-existent video (with authenticated context from page)
+      const response = await page.request.delete('/api/videos/non-existent-video-id-12345');
+
+      expect(response.status()).toBe(404);
+
+      const data = await response.json();
+      expect(data.error).toBe('Video not found');
+    });
+
+    test('DELETE /api/videos/[id] should return 403 when deleting another user\'s video', async ({ page }) => {
+      // First, get a video that exists (from seed data, uploaded by someone else)
+      const videosResponse = await page.request.get('/api/videos');
+      const videosData = await videosResponse.json();
+
+      // Find a video with an uploaderId that's not ours (seed data videos)
+      const videoToDelete = videosData.data?.find((v: { uploaderId: string | null }) => v.uploaderId !== null);
+
+      if (videoToDelete) {
+        // Log in as a different user
+        await page.goto('/login');
+        await page.locator('#firstName').fill('Other');
+        await page.locator('#lastName').fill('User');
+        await page.getByRole('button', { name: 'Continue' }).click();
+        await page.waitForURL('/', { timeout: 10000 });
+
+        // Try to delete the video owned by someone else
+        const response = await page.request.delete(`/api/videos/${videoToDelete.id}`);
+
+        expect(response.status()).toBe(403);
+
+        const data = await response.json();
+        expect(data.error).toBe('Not authorized to delete this video');
+      }
+    });
+
+    test('DELETE /api/videos/[id] should successfully delete own video', async ({ page }) => {
+      // Log in
+      await page.goto('/login');
+      await page.locator('#firstName').fill('Owner');
+      await page.locator('#lastName').fill('Deleter');
+      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.waitForURL('/', { timeout: 10000 });
+
+      // Get an act ID for creating a video
+      const actsResponse = await page.request.get('/api/acts');
+      const actsData = await actsResponse.json();
+      const actId = actsData.data[0].id;
+
+      // Create a video via the form (so we own it)
+      await page.goto('/submit');
+      await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      await page.locator('#title').fill('DELETE_TEST_VIDEO_' + Date.now());
+      await page.locator('#actId').selectOption(actId);
+      await page.getByRole('button', { name: 'Submit Video' }).click();
+
+      // Wait for success
+      await page.waitForSelector('text=Video submitted successfully!', { timeout: 10000 });
+
+      // Get the video we just created
+      const videosResponse = await page.request.get('/api/videos?search=DELETE_TEST_VIDEO');
+      const videosData = await videosResponse.json();
+      const ourVideo = videosData.data[0];
+
+      expect(ourVideo).toBeDefined();
+
+      // Delete it
+      const deleteResponse = await page.request.delete(`/api/videos/${ourVideo.id}`);
+
+      expect(deleteResponse.status()).toBe(200);
+
+      const deleteData = await deleteResponse.json();
+      expect(deleteData.message).toBe('Video deleted successfully');
+
+      // Verify it's gone
+      const verifyResponse = await page.request.get(`/api/videos/${ourVideo.id}`);
+      expect(verifyResponse.status()).toBe(404);
+    });
+  });
 });
