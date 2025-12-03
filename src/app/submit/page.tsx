@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { VideoSubmitForm, type VideoFormData } from '@/components/video/VideoSubmitForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import type { SelectOption } from '@/components/ui/Select';
 import type { Act, ApiResponse } from '@/types';
 
 export default function SubmitPage() {
   const router = useRouter();
+  const { data: session, status: authStatus } = useSession();
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [acts, setActs] = useState<SelectOption[]>([]);
   const [isLoadingActs, setIsLoadingActs] = useState(true);
@@ -66,11 +71,44 @@ export default function SubmitPage() {
     }
   };
 
+  // Show loading state while checking auth
+  if (authStatus === 'loading') {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <p className="text-gray-600 text-center">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show sign-in prompt if not authenticated
+  if (!session) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Sign In Required</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-gray-600">
+              You need to sign in to submit videos to the archive.
+            </p>
+            <Link href={`/login?callbackUrl=${encodeURIComponent('/submit')}`}>
+              <Button>Sign In to Continue</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Submit a Video</h1>
       <p className="text-gray-600 mb-8">
         Share a YouTube video of a circus performance to add it to our archive.
+        <span className="block text-sm mt-1">
+          Submitting as <strong>{session.user.name}</strong>
+        </span>
       </p>
 
       {errorMessage && submitStatus === 'idle' && (

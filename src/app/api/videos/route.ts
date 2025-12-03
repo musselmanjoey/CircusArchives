@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { auth } from '@/lib/auth';
 import { extractYouTubeId, isValidYouTubeUrl } from '@/lib/youtube';
 import type { VideoCreateInput, ApiResponse, Video } from '@/types';
 
@@ -57,6 +58,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body: VideoCreateInput = await request.json();
 
     // Validate YouTube URL
@@ -90,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create video
+    // Create video with uploader
     const video = await prisma.video.create({
       data: {
         youtubeUrl: body.youtubeUrl,
@@ -99,8 +109,9 @@ export async function POST(request: NextRequest) {
         year: body.year,
         description: body.description?.trim() || null,
         actId: body.actId,
+        uploaderId: session.user.id,
       },
-      include: { act: true },
+      include: { act: true, uploader: true },
     });
 
     return NextResponse.json<ApiResponse<Video>>(
