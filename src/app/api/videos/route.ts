@@ -67,8 +67,7 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error) {
-    console.error('Error fetching videos:', error);
+  } catch {
     return NextResponse.json<ApiResponse<null>>(
       { error: 'Failed to fetch videos' },
       { status: 500 }
@@ -168,8 +167,7 @@ export async function POST(request: NextRequest) {
       { data: video as Video, message: 'Video created successfully' },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error creating video:', error);
+  } catch {
     return NextResponse.json<ApiResponse<null>>(
       { error: 'Failed to create video' },
       { status: 500 }
