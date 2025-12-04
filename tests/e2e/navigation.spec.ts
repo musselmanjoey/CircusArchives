@@ -1,13 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
-
-// Helper function to log in
-async function loginAsTestUser(page: Page, firstName = 'Nav', lastName = 'Tester') {
-  await page.goto('/login');
-  await page.getByLabel('First Name').fill(firstName);
-  await page.getByLabel('Last Name').fill(lastName);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL('/', { timeout: 10000 });
-}
+import { test, expect } from '@playwright/test';
+import { loginAsTestUser } from './helpers/auth';
 
 test.describe('Navigation', () => {
   test.describe('Unauthenticated State', () => {

@@ -1,16 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
+import { loginAsTestUser } from './helpers/auth';
 
 // Prefix for test videos - makes them easy to identify and clean up
 const TEST_VIDEO_PREFIX = 'E2E_TEST_VIDEO_';
-
-// Helper function to log in before tests that require authentication
-async function loginAsTestUser(page: Page, firstName = 'Video', lastName = 'Submitter') {
-  await page.goto('/login');
-  await page.getByLabel('First Name').fill(firstName);
-  await page.getByLabel('Last Name').fill(lastName);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL('/', { timeout: 10000 });
-}
 
 // Helper function to delete a test video by ID
 async function deleteTestVideo(page: Page, videoId: string) {
@@ -44,7 +36,7 @@ test.describe('Video Submission', () => {
   test.describe('Authenticated User', () => {
     test.beforeEach(async ({ page }) => {
       // Log in before each test
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, 'Video', 'Submitter');
       await page.goto('/submit');
     });
 
@@ -127,21 +119,14 @@ test.describe('Video Submission', () => {
       // Wait for redirect
       await page.waitForURL('/videos', { timeout: 10000 });
 
-      // Get all videos and find the one we just created by checking the most recent ones
-      const response = await page.request.get('/api/videos?limit=10');
+      // Get recent videos and find by description (search can be flaky with special chars)
+      const response = await page.request.get('/api/videos?limit=20');
       const data = await response.json();
 
-      // Find video by description (search might not work immediately)
-      let createdVideo = data.data.find(
+      // Find video by exact description match
+      const createdVideo = data.data.find(
         (v: { description?: string }) => v.description === uniqueDescription
       );
-
-      // If not found by description, try by title (Flying Trapeze 2023)
-      if (!createdVideo) {
-        createdVideo = data.data.find(
-          (v: { title: string }) => v.title === 'Flying Trapeze 2023'
-        );
-      }
 
       expect(createdVideo).toBeDefined();
 

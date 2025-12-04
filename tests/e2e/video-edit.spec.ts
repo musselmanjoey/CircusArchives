@@ -1,16 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
+import { loginAsTestUser, signOutUser } from './helpers/auth';
 
 // Prefix for test data
 const TEST_VIDEO_PREFIX = 'E2E_EDIT_TEST_';
-
-// Helper to log in
-async function loginAsTestUser(page: Page, firstName = 'Edit', lastName = 'Tester') {
-  await page.goto('/login');
-  await page.locator('#firstName').fill(firstName);
-  await page.locator('#lastName').fill(lastName);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.waitForURL('/', { timeout: 10000 });
-}
 
 // Helper to create a test video and return its ID
 async function createTestVideo(page: Page, actIndex = 1): Promise<string> {
@@ -68,15 +60,14 @@ test.describe('Video Edit', () => {
     });
 
     test('should return 403 when not owner', async ({ page }) => {
+      test.setTimeout(60000); // Extended timeout for multi-auth test
+
       // First user creates a video
       await loginAsTestUser(page, 'Owner', 'User');
       const videoId = await createTestVideo(page);
 
       // Log out and log in as different user
-      await page.goto('/');
-      await page.getByRole('button', { name: 'Sign Out' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
-
+      await signOutUser(page);
       await loginAsTestUser(page, 'Other', 'User');
 
       // Try to edit the video
@@ -87,8 +78,7 @@ test.describe('Video Edit', () => {
       expect(response.status()).toBe(403);
 
       // Cleanup - log back in as owner to delete
-      await page.goto('/');
-      await page.getByRole('button', { name: 'Sign Out' }).click();
+      await signOutUser(page);
       await loginAsTestUser(page, 'Owner', 'User');
       await page.request.delete(`/api/videos/${videoId}`);
     });
@@ -236,13 +226,14 @@ test.describe('Video Edit', () => {
     });
 
     test('non-owner cannot access edit page', async ({ page }) => {
+      test.setTimeout(60000); // Extended timeout for multi-auth test
+
       // Create video as first user
       await loginAsTestUser(page, 'EditOwner', 'One');
       const videoId = await createTestVideo(page);
 
       // Sign out and sign in as different user
-      await page.getByRole('button', { name: 'Sign Out' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
+      await signOutUser(page);
       await loginAsTestUser(page, 'EditOther', 'Two');
 
       // Try to access edit page
@@ -252,7 +243,7 @@ test.describe('Video Edit', () => {
       await expect(page.getByText(/don't have permission|not authorized|unauthorized/i)).toBeVisible();
 
       // Cleanup - sign back in as owner
-      await page.getByRole('button', { name: 'Sign Out' }).click();
+      await signOutUser(page);
       await loginAsTestUser(page, 'EditOwner', 'One');
     });
 
@@ -365,13 +356,14 @@ test.describe('Video Edit', () => {
     });
 
     test('non-owner does not see edit/delete buttons', async ({ page }) => {
+      test.setTimeout(60000); // Extended timeout for multi-auth test
+
       // Create video as first user
       await loginAsTestUser(page, 'ButtonOwner', 'One');
       const videoId = await createTestVideo(page);
 
       // Sign out and sign in as different user
-      await page.getByRole('button', { name: 'Sign Out' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
+      await signOutUser(page);
       await loginAsTestUser(page, 'ButtonOther', 'Two');
 
       // View the video
@@ -382,7 +374,7 @@ test.describe('Video Edit', () => {
       await expect(page.getByRole('button', { name: /delete/i })).not.toBeVisible();
 
       // Cleanup
-      await page.getByRole('button', { name: 'Sign Out' }).click();
+      await signOutUser(page);
       await loginAsTestUser(page, 'ButtonOwner', 'One');
     });
 
@@ -392,8 +384,7 @@ test.describe('Video Edit', () => {
       const videoId = await createTestVideo(page);
 
       // Sign out
-      await page.getByRole('button', { name: 'Sign Out' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
+      await signOutUser(page);
 
       // View video as guest
       await page.goto(`/videos/${videoId}`);

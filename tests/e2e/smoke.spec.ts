@@ -88,20 +88,24 @@ test.describe('Smoke Tests', () => {
     test('can complete login flow', async ({ page }) => {
       await page.goto('/login');
 
-      // Fill in credentials using id-based selectors
-      await page.locator('#firstName').fill('Smoke');
-      await page.locator('#lastName').fill('Test');
+      // Fill in credentials using label selectors
+      await page.getByLabel('First Name').fill('Smoke');
+      await page.getByLabel('Last Name').fill('Test');
 
       // Submit should be enabled
       const submitButton = page.getByRole('button', { name: 'Continue' });
       await expect(submitButton).toBeEnabled();
 
-      // Submit and verify redirect
+      // Submit and wait for session to be established
       await submitButton.click();
-      await expect(page).toHaveURL('/', { timeout: 15000 });
 
-      // Verify logged in state
-      await expect(page.getByRole('navigation').getByText('Smoke Test')).toBeVisible();
+      // Verify logged in state (proves session is active)
+      await expect(page.getByRole('navigation').getByText('Smoke Test')).toBeVisible({
+        timeout: 15000,
+      });
+
+      // Should be on home page
+      await expect(page).toHaveURL('/');
     });
 
     test('navigation works correctly', async ({ page }) => {

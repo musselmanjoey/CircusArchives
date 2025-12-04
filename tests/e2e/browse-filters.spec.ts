@@ -1,16 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
+import { loginAsTestUser } from './helpers/auth';
 
 // Test data prefix
 const TEST_VIDEO_PREFIX = 'E2E_FILTER_TEST_';
-
-// Helper to log in
-async function loginAsTestUser(page: Page, firstName = 'Filter', lastName = 'Tester') {
-  await page.goto('/login');
-  await page.locator('#firstName').fill(firstName);
-  await page.locator('#lastName').fill(lastName);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.waitForURL('/', { timeout: 10000 });
-}
 
 // Helper to cleanup test videos
 async function cleanupTestVideos(page: Page) {

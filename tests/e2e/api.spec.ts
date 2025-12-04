@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginAsTestUser } from './helpers/auth';
 
 test.describe('API Endpoints', () => {
   test.describe('Acts API', () => {
@@ -194,11 +195,7 @@ test.describe('API Endpoints', () => {
 
     test('DELETE /api/videos/[id] should return 404 for non-existent video', async ({ page, request }) => {
       // Log in first to get authenticated session
-      await page.goto('/login');
-      await page.locator('#firstName').fill('Delete');
-      await page.locator('#lastName').fill('Tester');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Delete', 'Tester');
 
       // Now try to delete a non-existent video (with authenticated context from page)
       const response = await page.request.delete('/api/videos/non-existent-video-id-12345');
@@ -219,11 +216,7 @@ test.describe('API Endpoints', () => {
 
       if (videoToDelete) {
         // Log in as a different user
-        await page.goto('/login');
-        await page.locator('#firstName').fill('Other');
-        await page.locator('#lastName').fill('User');
-        await page.getByRole('button', { name: 'Continue' }).click();
-        await page.waitForURL('/', { timeout: 10000 });
+        await loginAsTestUser(page, 'Other', 'User');
 
         // Try to delete the video owned by someone else
         const response = await page.request.delete(`/api/videos/${videoToDelete.id}`);
@@ -237,11 +230,7 @@ test.describe('API Endpoints', () => {
 
     test('DELETE /api/videos/[id] should successfully delete own video', async ({ page }) => {
       // Log in
-      await page.goto('/login');
-      await page.locator('#firstName').fill('Owner');
-      await page.locator('#lastName').fill('Deleter');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await page.waitForURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Owner', 'Deleter');
 
       // Get an act ID for creating a video
       const actsResponse = await page.request.get('/api/acts');
