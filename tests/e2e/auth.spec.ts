@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginAsTestUser, signOutUser } from './helpers/auth';
 
 test.describe('Authentication', () => {
   test.describe('Login Flow', () => {
@@ -35,11 +36,13 @@ test.describe('Authentication', () => {
       await page.getByLabel('Last Name').fill('User');
       await page.getByRole('button', { name: 'Continue' }).click();
 
-      // Should redirect to home page after login
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      // User name should appear in navigation (proves session is active)
+      await expect(page.getByRole('navigation').getByText('Test User')).toBeVisible({
+        timeout: 15000,
+      });
 
-      // User name should appear in navigation
-      await expect(page.getByText('Test User')).toBeVisible();
+      // Should be on home page
+      await expect(page).toHaveURL('/');
     });
 
     test('should redirect to callback URL after login', async ({ page }) => {
@@ -49,19 +52,20 @@ test.describe('Authentication', () => {
       await page.getByLabel('Last Name').fill('Test');
       await page.getByRole('button', { name: 'Continue' }).click();
 
-      // Should redirect to the callback URL
-      await expect(page).toHaveURL('/videos', { timeout: 10000 });
+      // Wait for session to be established first
+      await expect(page.getByRole('navigation').getByText('Callback Test')).toBeVisible({
+        timeout: 15000,
+      });
+
+      // Should be at the callback URL
+      await expect(page).toHaveURL('/videos');
     });
   });
 
   test.describe('Session Persistence', () => {
     test('should maintain session across page navigation', async ({ page }) => {
       // Log in first
-      await page.goto('/login');
-      await page.getByLabel('First Name').fill('Session');
-      await page.getByLabel('Last Name').fill('Test');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Session', 'Test');
 
       // Navigate to different pages and verify session persists (check nav bar specifically)
       await page.goto('/videos');
@@ -73,11 +77,7 @@ test.describe('Authentication', () => {
 
     test('should maintain session after page refresh', async ({ page }) => {
       // Log in first
-      await page.goto('/login');
-      await page.getByLabel('First Name').fill('Refresh');
-      await page.getByLabel('Last Name').fill('Test');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Refresh', 'Test');
 
       // Refresh the page
       await page.reload();
@@ -90,36 +90,28 @@ test.describe('Authentication', () => {
   test.describe('Sign Out', () => {
     test('should successfully sign out', async ({ page }) => {
       // Log in first
-      await page.goto('/login');
-      await page.getByLabel('First Name').fill('SignOut');
-      await page.getByLabel('Last Name').fill('Test');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'SignOut', 'Test');
 
       // Verify logged in
       await expect(page.getByText('SignOut Test')).toBeVisible();
 
       // Click sign out
-      await page.getByRole('button', { name: 'Sign Out' }).click();
+      await signOutUser(page);
 
       // Should show Sign In button instead of user name
-      await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
       await expect(page.getByText('SignOut Test')).not.toBeVisible();
     });
 
     test('should redirect to home after sign out', async ({ page }) => {
       // Log in first
-      await page.goto('/login');
-      await page.getByLabel('First Name').fill('Redirect');
-      await page.getByLabel('Last Name').fill('Test');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Redirect', 'Test');
 
       // Navigate to a different page
       await page.goto('/videos');
 
       // Sign out
-      await page.getByRole('button', { name: 'Sign Out' }).click();
+      await signOutUser(page);
 
       // Should redirect to home
       await expect(page).toHaveURL('/', { timeout: 10000 });

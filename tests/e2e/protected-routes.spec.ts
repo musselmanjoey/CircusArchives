@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginAsTestUser } from './helpers/auth';
 
 test.describe('Protected Routes', () => {
   test.describe('Submit Page', () => {
@@ -23,11 +24,7 @@ test.describe('Protected Routes', () => {
 
     test('should show submission form when authenticated', async ({ page }) => {
       // Log in first
-      await page.goto('/login');
-      await page.locator('#firstName').fill('Submit');
-      await page.locator('#lastName').fill('Tester');
-      await page.getByRole('button', { name: 'Continue' }).click();
-      await expect(page).toHaveURL('/', { timeout: 10000 });
+      await loginAsTestUser(page, 'Submit', 'Tester');
 
       // Navigate to submit page
       await page.goto('/submit');
@@ -45,12 +42,15 @@ test.describe('Protected Routes', () => {
       // Click sign in
       await page.getByRole('link', { name: 'Sign In to Continue' }).click();
 
-      // Fill in credentials using id-based selectors
-      await page.locator('#firstName').fill('Return');
-      await page.locator('#lastName').fill('Test');
+      // Fill in credentials and wait for session
+      await page.getByLabel('First Name').fill('Return');
+      await page.getByLabel('Last Name').fill('Test');
       await page.getByRole('button', { name: 'Continue' }).click();
 
-      // Should return to submit page
+      // Should return to submit page - wait for user name in nav to confirm session
+      await expect(page.getByRole('navigation').getByText('Return Test')).toBeVisible({
+        timeout: 15000,
+      });
       await expect(page).toHaveURL('/submit', { timeout: 10000 });
       await expect(page.getByRole('heading', { name: 'Submit a Video' })).toBeVisible();
     });
