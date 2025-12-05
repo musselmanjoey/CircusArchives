@@ -24,10 +24,12 @@ Following the tornado that damaged the circus tent and caused a multi-year disru
 - Filter videos by performer
 - Auto-generated titles (Act + Year)
 
-### V3 - Voting System (Planned)
-- One vote per user per video
-- Rankings by act type
-- Yearly aggregation
+### V3 - Voting System ✅
+- One "Best" vote per user per act category
+- Vote switching (change vote within same act)
+- Performer bonus (2x vote weight for tagged performers)
+- Rankings homepage showing top-voted videos by act
+- Voters list modal (see who voted)
 
 ### V4+ - Future
 - Comments and discussion
