@@ -71,9 +71,11 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
   const handleSelectPerformer = useCallback((performer: Performer) => {
     onChange([...selectedPerformers, performer]);
     setSearchQuery('');
-    setShowDropdown(false);
     setHighlightedIndex(-1);
-    inputRef.current?.focus();
+    // Keep dropdown open and refocus so user can continue adding performers
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   }, [selectedPerformers, onChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -176,7 +178,7 @@ export function PerformerSelector({ selectedPerformers, onChange }: PerformerSel
         />
 
         {/* Dropdown */}
-        {showDropdown && (searchQuery || showNewPerformerForm) && (
+        {showDropdown && (searchQuery || showNewPerformerForm || searchResults.length > 0) && (
           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
             {isLoading ? (
               <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>

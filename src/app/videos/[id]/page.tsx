@@ -6,6 +6,7 @@ import { notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Button } from '@/components/ui/Button';
+import { VoteInfo } from '@/components/voting/VoteInfo';
 import type { Video, ApiResponse } from '@/types';
 
 interface VideoPageProps {
@@ -95,6 +96,15 @@ export default function VideoPage({ params }: VideoPageProps) {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="font-medium">{video.year}</span>
               </div>
+              {video.act && (
+                <div className="mt-4">
+                  <VoteInfo
+                    videoId={video.id}
+                    actId={video.act.id}
+                    actName={video.act.name}
+                  />
+                </div>
+              )}
             </div>
             {canEdit && (
               <div className="flex gap-2">

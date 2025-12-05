@@ -13,7 +13,8 @@ async function cleanupTestVideos(page: Page) {
 
     if (data.data && data.data.length > 0) {
       for (const video of data.data) {
-        if (video.title.startsWith(TEST_VIDEO_PREFIX)) {
+        // Check description since title is auto-generated from act + year
+        if (video.description?.startsWith(TEST_VIDEO_PREFIX)) {
           await page.request.delete(`/api/videos/${video.id}`);
         }
       }
