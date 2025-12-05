@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
 const navItems = [
+  { href: '/', label: 'Best Videos' },
   { href: '/videos', label: 'Browse' },
   { href: '/submit', label: 'Submit Video' },
 ];

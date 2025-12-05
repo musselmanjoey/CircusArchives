@@ -16,6 +16,7 @@ model Act {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   videos      Video[]
+  votes       Vote[]
 
   @@map("acts")
 }
@@ -37,8 +38,10 @@ model Video {
   // V2: Performer tagging
   performers  VideoPerformer[]
 
-  // Future relations (V3+)
-  // votes      Vote[]
+  // V3: Voting
+  votes       Vote[]
+
+  // Future relations (V4+)
   // comments   Comment[]
   // tags       VideoTag[]
 
@@ -64,6 +67,7 @@ model User {
   // App relations
   videos        Video[]          @relation("UploadedVideos")
   performances  VideoPerformer[]
+  votes         Vote[]
 
   @@map("users")
 }
@@ -110,4 +114,20 @@ model VideoPerformer {
 
   @@unique([videoId, userId])
   @@map("video_performers")
+}
+
+// V3: Voting System
+model Vote {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId   String   @map("video_id")
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  actId     String   @map("act_id")
+  act       Act      @relation(fields: [actId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, actId]) // One vote per user per act
+  @@map("votes")
 }

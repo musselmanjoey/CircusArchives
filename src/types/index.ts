@@ -54,7 +54,7 @@ export interface VideoCreateInput {
 export interface Act {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,4 +84,37 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   totalPages: number;
+}
+
+// V3: Voting types
+export interface Vote {
+  id: string;
+  userId: string;
+  user?: Performer;
+  videoId: string;
+  video?: Video;
+  actId: string;
+  act?: Act;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface VoteWithDetails extends Vote {
+  isPerformer: boolean;
+  voteWeight: number;
+}
+
+export interface VideoRanking {
+  videoId: string;
+  video: Video;
+  actId: string;
+  act: Act;
+  voteCount: number;
+  voterCount: number;
+}
+
+export interface ActRanking {
+  act: Act;
+  topVideo: Video | null;
+  totalVotes: number;
 }
