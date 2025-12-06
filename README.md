@@ -31,9 +31,16 @@ Following the tornado that damaged the circus tent and caused a multi-year disru
 - Rankings homepage showing top-voted videos by act
 - Voters list modal (see who voted)
 
-### V4+ - Future
-- Comments and discussion
-- Facebook OAuth
+### V4 - Comments & Community Pages ✅
+- 140-character comments on videos (tweet-length)
+- Character counter with visual feedback
+- Edit/delete own comments
+- Act leaderboards (videos ranked by votes)
+- About page (FSU Flying High Circus history)
+- Support page (developer info with Venmo)
+
+### V5+ - Future
+- Facebook/Google OAuth
 - Email invites and alumni verification
 
 ## Tech Stack
@@ -84,13 +91,16 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ```
 src/
 ├── app/              # Next.js App Router pages
-│   ├── api/          # API routes (videos, acts, users, auth)
+│   ├── api/          # API routes (videos, acts, users, auth, comments)
+│   ├── about/        # About page
 │   ├── login/        # Login page
 │   ├── submit/       # Video submission (protected)
+│   ├── support/      # Support/donate page
 │   └── videos/       # Browse and video detail pages
 ├── components/       # React components
 │   ├── ui/           # Reusable primitives
 │   ├── video/        # Video components
+│   ├── comments/     # Comment form and display
 │   ├── layout/       # Header, Footer, Navigation
 │   └── search/       # Search and filter
 ├── lib/              # Utilities (db, auth, youtube)
