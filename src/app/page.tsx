@@ -105,6 +105,9 @@ interface RankingCardProps {
 function RankingCard({ ranking, featured }: RankingCardProps) {
   const { act, topVideo, totalVotes } = ranking;
 
+  // Always link to leaderboard view (browse page filtered by act, sorted by votes)
+  const leaderboardUrl = `/videos?actId=${act.id}&sort=votes`;
+
   if (topVideo) {
     const thumbnailUrl = getThumbnailUrl(topVideo.youtubeId, 'medium');
 
@@ -118,7 +121,7 @@ function RankingCard({ ranking, featured }: RankingCardProps) {
       .join(', ');
 
     return (
-      <Link href={`/videos/${topVideo.id}`}>
+      <Link href={leaderboardUrl}>
         <Card className={`overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${featured ? 'ring-2 ring-yellow-400' : ''}`}>
           <div className="aspect-video relative">
             <img
@@ -159,7 +162,7 @@ function RankingCard({ ranking, featured }: RankingCardProps) {
 
   // Act without a top video (no votes yet)
   return (
-    <Link href={`/videos?actId=${act.id}`}>
+    <Link href={leaderboardUrl}>
       <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
         <div className="aspect-video relative bg-gray-100 flex items-center justify-center">
           <div className="text-center p-4">

@@ -31,7 +31,7 @@ npx prisma studio        # Visual DB browser
 - V1 ✅ Core MVP (videos, acts, browse/search)
 - V2 ✅ Auth + Performer Tagging (NextAuth, name login, tag performers)
 - V3 ✅ Voting (one vote per act, performer 2x bonus, rankings homepage)
-- V4 Planned: Comments
+- V4 ✅ Comments + Leaderboard + About/Support (140-char comments, act leaderboards, static pages)
 - V5 Planned: OAuth + Email invites
 
 ## IMPORTANT

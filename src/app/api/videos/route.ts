@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const performerId = searchParams.get('performerId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
+    const sort = searchParams.get('sort'); // 'votes' for leaderboard view
 
     const where: Record<string, unknown> = {};
 
@@ -37,6 +38,59 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Determine sort order
+    let orderBy: Record<string, unknown> = { createdAt: 'desc' };
+
+    if (sort === 'votes') {
+      // Sort by vote count (calculated with performer 2x bonus)
+      const videosWithVotes = await prisma.video.findMany({
+        where,
+        include: {
+          act: true,
+          performers: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+          votes: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      // Calculate vote scores (performer votes = 2x)
+      const scoredVideos = videosWithVotes.map((video) => {
+        const performerIds = new Set(video.performers.map((p) => p.userId));
+        let voteScore = 0;
+        for (const vote of video.votes) {
+          voteScore += performerIds.has(vote.userId) ? 2 : 1;
+        }
+        return { ...video, voteScore, votes: undefined };
+      });
+
+      // Sort by vote score descending
+      scoredVideos.sort((a, b) => b.voteScore - a.voteScore);
+
+      // Paginate
+      const paginatedVideos = scoredVideos.slice((page - 1) * limit, page * limit);
+      const total = scoredVideos.length;
+
+      return NextResponse.json({
+        data: paginatedVideos,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      });
+    }
+
     const [videos, total] = await Promise.all([
       prisma.video.findMany({
         where,
@@ -54,7 +108,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),
