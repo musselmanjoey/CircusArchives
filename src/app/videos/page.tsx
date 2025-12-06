@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { VideoGrid } from '@/components/video/VideoGrid';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -8,7 +8,7 @@ import { FilterPanel } from '@/components/search/FilterPanel';
 import type { Video, VideoFilters, Act, ApiResponse, PaginatedResponse, Performer } from '@/types';
 import type { SelectOption } from '@/components/ui/Select';
 
-export default function VideosPage() {
+function VideosContent() {
   const searchParams = useSearchParams();
   const initialActId = searchParams.get('actId') || undefined;
   const sortParam = searchParams.get('sort') || undefined;
@@ -140,5 +140,19 @@ export default function VideosPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function VideosPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-12">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <VideosContent />
+    </Suspense>
   );
 }
