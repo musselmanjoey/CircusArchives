@@ -1,20 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAsTestUser } from './helpers/auth';
-
-const TEST_VIDEO_PREFIX = 'E2E_COMMENTS_TEST_';
-
-async function createTestVideo(page: Page, actId: string, year: number) {
-  const response = await page.request.post('/api/videos', {
-    data: {
-      youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      year,
-      description: `${TEST_VIDEO_PREFIX}${Date.now()}`,
-      actId,
-    },
-  });
-  const data = await response.json();
-  return data.data;
-}
+import { createTestVideo } from './helpers/video';
 
 test.describe('Comments System', () => {
   test.describe('Comments API', () => {

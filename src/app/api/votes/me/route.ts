@@ -19,7 +19,11 @@ export async function GET() {
       include: {
         video: {
           include: {
-            act: true,
+            acts: {
+              include: {
+                act: true,
+              },
+            },
             performers: {
               include: {
                 user: { select: { id: true, firstName: true, lastName: true } },

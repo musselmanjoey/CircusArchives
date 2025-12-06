@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import type { ApiResponse, VideoRanking, ActRanking } from '@/types';
+import type { ApiResponse, VideoRanking, ActRanking, Video } from '@/types';
 
 // GET /api/rankings - Get rankings for all acts or a specific act
 export async function GET(request: NextRequest) {
@@ -26,35 +26,50 @@ export async function GET(request: NextRequest) {
 }
 
 // Get all videos for an act ranked by votes
+// V5: Uses VideoAct join table for many-to-many relationship
 async function getActVideoRankings(actId: string): Promise<VideoRanking[]> {
-  // Get all videos for this act with their votes
-  const videos = await prisma.video.findMany({
+  // Get the act
+  const act = await prisma.act.findUnique({
+    where: { id: actId },
+  });
+
+  if (!act) {
+    return [];
+  }
+
+  // Get all videos that have this act via the join table
+  const videoActs = await prisma.videoAct.findMany({
     where: { actId },
     include: {
-      act: true,
-      performers: {
+      video: {
         include: {
-          user: { select: { id: true, firstName: true, lastName: true } },
-        },
-      },
-      votes: {
-        include: {
-          user: { select: { id: true, firstName: true, lastName: true } },
+          acts: {
+            include: {
+              act: true,
+            },
+          },
+          performers: {
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
+          votes: {
+            where: { actId }, // Only votes for this specific act
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
         },
       },
     },
-    orderBy: { year: 'desc' },
   });
 
   // Calculate vote counts with performer bonus
-  const rankings: VideoRanking[] = videos.map((video) => {
+  const rankings: VideoRanking[] = videoActs.map(({ video }) => {
     const performerUserIds = new Set(video.performers.map((p) => p.userId));
 
     let voteCount = 0;
     for (const vote of video.votes) {
-      // Check if the voter is a performer in ANY video for this act
-      // For simplicity, we check if they're a performer in THIS video
-      // TODO: Could extend to check if performer in any video of the same act
       if (performerUserIds.has(vote.userId)) {
         voteCount += 2; // Performer bonus
       } else {
@@ -62,30 +77,39 @@ async function getActVideoRankings(actId: string): Promise<VideoRanking[]> {
       }
     }
 
+    // Build video object with legacy act field for backward compat
+    const videoData: Video = {
+      id: video.id,
+      youtubeUrl: video.youtubeUrl,
+      youtubeId: video.youtubeId,
+      title: video.title,
+      year: video.year,
+      description: video.description ?? undefined,
+      showType: video.showType,
+      acts: video.acts,
+      act: video.acts[0]?.act || null,
+      performers: video.performers,
+      createdAt: video.createdAt,
+      updatedAt: video.updatedAt,
+    };
+
     return {
       videoId: video.id,
-      video: {
-        id: video.id,
-        youtubeUrl: video.youtubeUrl,
-        youtubeId: video.youtubeId,
-        title: video.title,
-        year: video.year,
-        description: video.description ?? undefined,
-        actId: video.actId,
-        act: video.act,
-        performers: video.performers,
-        createdAt: video.createdAt,
-        updatedAt: video.updatedAt,
-      },
-      actId: video.actId,
-      act: video.act,
+      video: videoData,
+      actId,
+      act,
       voteCount,
       voterCount: video.votes.length,
     };
   });
 
-  // Sort by vote count descending
-  rankings.sort((a, b) => b.voteCount - a.voteCount);
+  // Sort by vote count descending, then by year descending
+  rankings.sort((a, b) => {
+    if (b.voteCount !== a.voteCount) {
+      return b.voteCount - a.voteCount;
+    }
+    return b.video.year - a.video.year;
+  });
 
   return rankings;
 }

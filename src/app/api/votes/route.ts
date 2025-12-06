@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import type { ApiResponse, Vote } from '@/types';
 
 // POST /api/votes - Cast or update a vote
+// V5: Now requires actId since videos can have multiple acts
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { videoId } = body;
+    const { videoId, actId } = body;
 
     if (!videoId) {
       return NextResponse.json<ApiResponse<null>>(
@@ -24,15 +25,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the video to find its act
-    const video = await prisma.video.findUnique({
-      where: { id: videoId },
-      select: { id: true, actId: true },
+    if (!actId) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Act ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the video exists and has the specified act
+    const videoAct = await prisma.videoAct.findUnique({
+      where: {
+        videoId_actId: {
+          videoId,
+          actId,
+        },
+      },
+      include: {
+        video: true,
+        act: true,
+      },
     });
 
-    if (!video) {
+    if (!videoAct) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Video not found' },
+        { error: 'Video not found or does not have this act' },
         { status: 404 }
       );
     }
@@ -42,7 +58,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId_actId: {
           userId: session.user.id,
-          actId: video.actId,
+          actId,
         },
       },
     });
@@ -56,7 +72,12 @@ export async function POST(request: NextRequest) {
         where: { id: existingVote.id },
         data: { videoId },
         include: {
-          video: { include: { act: true } },
+          video: {
+            include: {
+              acts: { include: { act: true } },
+            },
+          },
+          act: true,
           user: { select: { id: true, firstName: true, lastName: true } },
         },
       });
@@ -67,10 +88,15 @@ export async function POST(request: NextRequest) {
         data: {
           userId: session.user.id,
           videoId,
-          actId: video.actId,
+          actId,
         },
         include: {
-          video: { include: { act: true } },
+          video: {
+            include: {
+              acts: { include: { act: true } },
+            },
+          },
+          act: true,
           user: { select: { id: true, firstName: true, lastName: true } },
         },
       });

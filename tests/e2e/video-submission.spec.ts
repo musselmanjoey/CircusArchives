@@ -50,7 +50,10 @@ test.describe('Video Submission', () => {
       await expect(page.getByLabel('YouTube URL')).toBeVisible();
       // Title field removed - now auto-generated from Act + Year
       await expect(page.getByLabel('Year')).toBeVisible();
-      await expect(page.getByLabel('Act Category')).toBeVisible();
+      // V5: Show type dropdown
+      await expect(page.getByLabel('Show Type')).toBeVisible();
+      // V5: Act categories now use chips, not dropdown
+      await expect(page.getByText('Act Categories')).toBeVisible();
       await expect(page.getByLabel('Description (optional)')).toBeVisible();
     });
 
@@ -59,13 +62,24 @@ test.describe('Video Submission', () => {
       await expect(page.getByLabel('Title')).not.toBeVisible();
     });
 
+    test('should have Show Type dropdown with HOME and CALLAWAY', async ({ page }) => {
+      // V5: Show type dropdown with two options
+      const showTypeSelect = page.getByLabel('Show Type');
+      await expect(showTypeSelect).toBeVisible();
+
+      // Should have Home Show and Callaway Show options
+      await expect(page.locator('option', { hasText: 'Home Show' })).toBeVisible();
+      await expect(page.locator('option', { hasText: 'Callaway Show' })).toBeVisible();
+    });
+
     test('should show submitter name', async ({ page }) => {
       await expect(page.getByText('Submitting as Video Submitter')).toBeVisible();
     });
 
     test('should show validation error for invalid URL', async ({ page }) => {
       await page.getByLabel('YouTube URL').fill('invalid-url');
-      await page.getByLabel('Act Category').selectOption({ index: 1 }); // Select first act
+      // V5: Click an act chip to select it
+      await page.getByRole('button', { name: 'Juggling' }).click();
       await page.getByRole('button', { name: 'Submit Video' }).click();
 
       // Should still be on the same page with the input visible
@@ -80,23 +94,22 @@ test.describe('Video Submission', () => {
       await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       // No Title field - it's auto-generated from Act + Year
       await page.getByLabel('Year').selectOption('2024');
-      await page.getByLabel('Act Category').selectOption({ label: 'Juggling' });
+      // V5: Show type defaults to HOME, but let's be explicit
+      await page.getByLabel('Show Type').selectOption('HOME');
+      // V5: Click act chip to select
+      await page.getByRole('button', { name: 'Juggling' }).click();
       await page.getByLabel('Description (optional)').fill(uniqueDescription);
 
-      // Verify values are set
+      // Verify URL is set
       await expect(page.getByLabel('YouTube URL')).toHaveValue('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-
-      // Act Category value is a UUID, just verify it's not empty
-      const actValue = await page.getByLabel('Act Category').inputValue();
-      expect(actValue).toBeTruthy();
-      expect(actValue).not.toBe('');
 
       await page.getByRole('button', { name: 'Submit Video' }).click();
 
       // Check for validation errors if success message doesn't appear
-      const error = page.locator('.text-red-500');
+      const error = page.locator('.text-red-500, .text-error');
       if (await error.count() > 0) {
-        console.log('Validation errors:', await error.allInnerTexts());
+        const errorTexts = await error.allInnerTexts();
+        console.log('Validation errors:', errorTexts);
       }
 
       await expect(page.getByText('Video submitted successfully!')).toBeVisible({ timeout: 10000 });
@@ -110,7 +123,8 @@ test.describe('Video Submission', () => {
 
       await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       await page.getByLabel('Year').selectOption('2023');
-      await page.getByLabel('Act Category').selectOption({ label: 'Flying Trapeze' });
+      // V5: Click act chip to select
+      await page.getByRole('button', { name: 'Flying Trapeze' }).click();
       await page.getByLabel('Description (optional)').fill(uniqueDescription);
 
       await page.getByRole('button', { name: 'Submit Video' }).click();
@@ -132,6 +146,41 @@ test.describe('Video Submission', () => {
 
       // Title should be auto-generated as "Flying Trapeze 2023"
       expect(createdVideo.title).toBe('Flying Trapeze 2023');
+
+      // Cleanup
+      await page.request.delete(`/api/videos/${createdVideo.id}`);
+    });
+
+    test('should allow selecting multiple acts (V5)', async ({ page }) => {
+      const uniqueDescription = `${TEST_VIDEO_PREFIX}multiact_${Date.now()}`;
+
+      await page.getByLabel('YouTube URL').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      await page.getByLabel('Year').selectOption('2024');
+
+      // V5: Select multiple acts by clicking their chips
+      await page.getByRole('button', { name: 'Juggling' }).click();
+      await page.getByRole('button', { name: 'Flying Trapeze' }).click();
+
+      // Should show info text about multiple acts
+      await expect(page.getByText(/This video will appear in 2 act categories/)).toBeVisible();
+
+      await page.getByLabel('Description (optional)').fill(uniqueDescription);
+      await page.getByRole('button', { name: 'Submit Video' }).click();
+
+      await expect(page.getByText('Video submitted successfully!')).toBeVisible({ timeout: 10000 });
+
+      // Get the created video
+      await page.waitForURL('/videos', { timeout: 10000 });
+      const response = await page.request.get('/api/videos?limit=20');
+      const data = await response.json();
+      const createdVideo = data.data.find(
+        (v: { description?: string }) => v.description === uniqueDescription
+      );
+
+      expect(createdVideo).toBeDefined();
+      // Title should be "Juggling / Flying Trapeze 2024" or similar
+      expect(createdVideo.title).toContain('/');
+      expect(createdVideo.title).toContain('2024');
 
       // Cleanup
       await page.request.delete(`/api/videos/${createdVideo.id}`);
@@ -163,7 +212,8 @@ test.describe('Video Submission', () => {
 
       // Form fields should not be visible
       await expect(page.getByLabel('YouTube URL')).not.toBeVisible();
-      await expect(page.getByLabel('Act Category')).not.toBeVisible();
+      // V5: Act Categories is now a text label, not a dropdown
+      await expect(page.getByText('Act Categories')).not.toBeVisible();
     });
   });
 });

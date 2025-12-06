@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { extractYouTubeId, isValidYouTubeUrl } from '@/lib/youtube';
-import type { VideoCreateInput, ApiResponse, Video } from '@/types';
+import type { VideoCreateInput, ApiResponse, Video, ShowType } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,18 +11,26 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year');
     const search = searchParams.get('search');
     const performerId = searchParams.get('performerId');
+    const showType = searchParams.get('showType') as ShowType | null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
     const sort = searchParams.get('sort'); // 'votes' for leaderboard view
 
     const where: Record<string, unknown> = {};
 
+    // V5: Filter by act via join table
     if (actId) {
-      where.actId = actId;
+      where.acts = {
+        some: { actId },
+      };
     }
 
     if (year) {
       where.year = parseInt(year);
+    }
+
+    if (showType) {
+      where.showType = showType;
     }
 
     if (performerId) {
@@ -34,19 +42,23 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { description: { contains: search, mode: 'insensitive' } },
-        { act: { name: { contains: search, mode: 'insensitive' } } },
+        { acts: { some: { act: { name: { contains: search, mode: 'insensitive' } } } } },
       ];
     }
 
     // Determine sort order
-    let orderBy: Record<string, unknown> = { createdAt: 'desc' };
+    const orderBy: Record<string, unknown> = { createdAt: 'desc' };
 
     if (sort === 'votes') {
       // Sort by vote count (calculated with performer 2x bonus)
       const videosWithVotes = await prisma.video.findMany({
         where,
         include: {
-          act: true,
+          acts: {
+            include: {
+              act: true,
+            },
+          },
           performers: {
             include: {
               user: {
@@ -73,11 +85,13 @@ export async function GET(request: NextRequest) {
         for (const vote of video.votes) {
           voteScore += performerIds.has(vote.userId) ? 2 : 1;
         }
-        return { ...video, voteScore, votes: undefined };
+        // Add first act as legacy `act` field for backward compat
+        const act = video.acts[0]?.act || null;
+        return { ...video, act, voteCount: voteScore, votes: undefined };
       });
 
       // Sort by vote score descending
-      scoredVideos.sort((a, b) => b.voteScore - a.voteScore);
+      scoredVideos.sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
 
       // Paginate
       const paginatedVideos = scoredVideos.slice((page - 1) * limit, page * limit);
@@ -95,7 +109,11 @@ export async function GET(request: NextRequest) {
       prisma.video.findMany({
         where,
         include: {
-          act: true,
+          acts: {
+            include: {
+              act: true,
+            },
+          },
           performers: {
             include: {
               user: {
@@ -115,8 +133,14 @@ export async function GET(request: NextRequest) {
       prisma.video.count({ where }),
     ]);
 
+    // Add legacy `act` field for backward compat
+    const videosWithAct = videos.map((video) => ({
+      ...video,
+      act: video.acts[0]?.act || null,
+    }));
+
     return NextResponse.json({
-      data: videos,
+      data: videosWithAct,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -158,31 +182,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate required fields
-    if (!body.actId) {
+    // V5: Validate required fields
+    if (!body.actIds || body.actIds.length === 0) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Act category is required' },
+        { error: 'At least one act category is required' },
         { status: 400 }
       );
     }
 
-    // Get act name to generate title
-    const act = await prisma.act.findUnique({
-      where: { id: body.actId },
-      select: { name: true },
+    if (!body.showType) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Show type is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get act names to generate title
+    const acts = await prisma.act.findMany({
+      where: { id: { in: body.actIds } },
+      select: { id: true, name: true },
     });
 
-    if (!act) {
+    if (acts.length !== body.actIds.length) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Invalid act category' },
+        { error: 'One or more invalid act categories' },
         { status: 400 }
       );
     }
 
-    // Generate title from act + year
-    const title = `${act.name} ${body.year}`;
+    // Generate title from acts + year
+    const actNames = acts.map((a) => a.name).join(' / ');
+    const title = `${actNames} ${body.year}`;
 
-    // Create video with uploader and performers
+    // Create video with uploader, acts, and performers
     const video = await prisma.video.create({
       data: {
         youtubeUrl: body.youtubeUrl,
@@ -190,8 +222,13 @@ export async function POST(request: NextRequest) {
         title,
         year: body.year,
         description: body.description?.trim() || null,
-        actId: body.actId,
+        showType: body.showType,
         uploaderId: session.user.id,
+        acts: {
+          create: body.actIds.map((actId: string) => ({
+            actId,
+          })),
+        },
         performers: body.performerIds?.length
           ? {
               create: body.performerIds.map((userId: string) => ({
@@ -201,7 +238,11 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
       include: {
-        act: true,
+        acts: {
+          include: {
+            act: true,
+          },
+        },
         uploader: true,
         performers: {
           include: {
@@ -217,8 +258,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Add legacy `act` field for backward compat
+    const videoWithAct = {
+      ...video,
+      act: video.acts[0]?.act || null,
+    };
+
     return NextResponse.json<ApiResponse<Video>>(
-      { data: video as Video, message: 'Video created successfully' },
+      { data: videoWithAct as Video, message: 'Video created successfully' },
       { status: 201 }
     );
   } catch {

@@ -18,6 +18,13 @@ export function VideoCard({ video, showVotes = false, rank }: VideoCardProps) {
     .join(', ');
   const moreCount = performers.length - 2;
 
+  // V5: Get act names from multiple acts or legacy single act
+  const actNames = video.acts?.length
+    ? video.acts.map((va) => va.act.name).join(' / ')
+    : video.act?.name || 'Unknown Act';
+
+  const showTypeLabel = video.showType === 'CALLAWAY' ? 'Callaway' : 'Home';
+
   return (
     <Link href={`/videos/${video.id}`}>
       <Card hoverable className="overflow-hidden h-full">
@@ -37,6 +44,11 @@ export function VideoCard({ video, showVotes = false, rank }: VideoCardProps) {
             </div>
           )}
 
+          {/* Show type badge */}
+          <div className="absolute top-3 right-3 bg-garnet/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-medium">
+            {showTypeLabel}
+          </div>
+
           {/* Year badge */}
           <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
             {video.year}
@@ -54,7 +66,7 @@ export function VideoCard({ video, showVotes = false, rank }: VideoCardProps) {
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-text line-clamp-1">
-            {video.act?.name || 'Unknown Act'}
+            {actNames}
           </h3>
           {performers.length > 0 && (
             <p className="text-sm text-text-muted mt-1 line-clamp-1">

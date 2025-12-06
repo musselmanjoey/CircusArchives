@@ -25,6 +25,18 @@ export interface VideoPerformer {
   createdAt: Date;
 }
 
+// V5: Show type enum
+export type ShowType = 'HOME' | 'CALLAWAY';
+
+// V5: Video-Act join
+export interface VideoAct {
+  id: string;
+  videoId: string;
+  actId: string;
+  act: Act;
+  createdAt: Date;
+}
+
 // Video types
 export interface Video {
   id: string;
@@ -33,7 +45,10 @@ export interface Video {
   title: string;
   year: number;
   description?: string;
-  actId: string;
+  showType: ShowType;
+  // V5: Multiple acts via join table
+  acts?: VideoAct[];
+  // Legacy single act (for backward compat during transition)
   act?: Act;
   uploaderId?: string;
   uploader?: User;
@@ -47,7 +62,8 @@ export interface VideoCreateInput {
   youtubeUrl: string;
   year: number;
   description?: string;
-  actId: string;
+  showType: ShowType;
+  actIds: string[];
   performerIds?: string[];
 }
 
@@ -73,6 +89,7 @@ export interface VideoFilters {
   year?: number;
   search?: string;
   performerId?: string;
+  showType?: ShowType;
 }
 
 export interface PaginationParams {

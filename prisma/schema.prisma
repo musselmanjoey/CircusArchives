@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// V5: Show Type Enum
+enum ShowType {
+  HOME
+  CALLAWAY
+}
+
 // V1 MVP Tables
 
 model Act {
@@ -15,7 +21,9 @@ model Act {
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  videos      Video[]
+
+  // V5: Many-to-many with videos
+  videos      VideoAct[]
   votes       Vote[]
 
   @@map("acts")
@@ -28,12 +36,17 @@ model Video {
   title       String
   year        Int
   description String?
-  actId       String   @map("act_id")
-  act         Act      @relation(fields: [actId], references: [id])
+
+  // V5: Show type (required)
+  showType    ShowType @map("show_type")
+
   uploaderId  String?  @map("uploader_id")
   uploader    User?    @relation("UploadedVideos", fields: [uploaderId], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // V5: Many-to-many with acts (replaces single actId)
+  acts        VideoAct[]
 
   // V2: Performer tagging
   performers  VideoPerformer[]
@@ -45,6 +58,19 @@ model Video {
   comments    Comment[]
 
   @@map("videos")
+}
+
+// V5: Video-Act join table (many-to-many)
+model VideoAct {
+  id        String   @id @default(uuid())
+  videoId   String   @map("video_id")
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  actId     String   @map("act_id")
+  act       Act      @relation(fields: [actId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([videoId, actId])
+  @@map("video_acts")
 }
 
 // V2 Auth Tables (NextAuth.js compatible)

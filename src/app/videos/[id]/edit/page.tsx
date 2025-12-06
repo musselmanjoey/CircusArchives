@@ -8,11 +8,16 @@ import { Button } from '@/components/ui/Button';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { PerformerSelector } from '@/components/video/PerformerSelector';
 import { getYearRange } from '@/lib/utils';
-import type { Video, Act, ApiResponse, Performer } from '@/types';
+import type { Video, Act, ApiResponse, Performer, ShowType } from '@/types';
 
 interface EditVideoPageProps {
   params: Promise<{ id: string }>;
 }
+
+const showTypeOptions: SelectOption[] = [
+  { value: 'HOME', label: 'Home Show' },
+  { value: 'CALLAWAY', label: 'Callaway Show' },
+];
 
 export default function EditVideoPage({ params }: EditVideoPageProps) {
   const { id } = use(params);
@@ -27,7 +32,8 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
 
   // Form state
   const [year, setYear] = useState<number>(new Date().getFullYear());
-  const [actId, setActId] = useState<string>('');
+  const [actIds, setActIds] = useState<string[]>([]);
+  const [showType, setShowType] = useState<ShowType>('HOME');
   const [description, setDescription] = useState<string>('');
   const [selectedPerformers, setSelectedPerformers] = useState<Performer[]>([]);
 
@@ -57,8 +63,15 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
         if (videoData.data) {
           setVideo(videoData.data);
           setYear(videoData.data.year);
-          setActId(videoData.data.actId);
+          setShowType(videoData.data.showType || 'HOME');
           setDescription(videoData.data.description || '');
+
+          // V5: Set actIds from acts array or legacy act field
+          if (videoData.data.acts?.length) {
+            setActIds(videoData.data.acts.map((va) => va.actId));
+          } else if (videoData.data.act) {
+            setActIds([videoData.data.act.id]);
+          }
 
           // Convert performers to Performer type
           if (videoData.data.performers) {
@@ -102,7 +115,8 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           year,
-          actId,
+          actIds,
+          showType,
           description,
           performerIds: selectedPerformers.map((p) => p.id),
         }),
@@ -127,7 +141,7 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
   if (status === 'loading' || isLoading) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-text-muted">Loading...</p>
       </div>
     );
   }
@@ -135,9 +149,9 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
   if (!session) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600 mb-4">You must be signed in to edit videos.</p>
+        <div className="bg-card rounded-lg shadow-sm p-6 text-center">
+          <h2 className="text-xl font-semibold text-text mb-2">Sign In Required</h2>
+          <p className="text-text-muted mb-4">You must be signed in to edit videos.</p>
           <Link href="/login">
             <Button>Sign In</Button>
           </Link>
@@ -149,7 +163,7 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
   if (error && !video) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-red-50 text-red-700 p-4 rounded-md">{error}</div>
+        <div className="bg-red-50 text-error p-4 rounded-md">{error}</div>
         <Link href="/videos">
           <Button variant="ghost" className="mt-4">&larr; Back to Videos</Button>
         </Link>
@@ -160,7 +174,7 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
   if (!canEdit) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-yellow-50 text-yellow-700 p-4 rounded-md">
+        <div className="bg-gold/20 text-gold-dark p-4 rounded-md">
           You don&apos;t have permission to edit this video.
         </div>
         <Link href={`/videos/${id}`}>
@@ -176,15 +190,15 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
         <Button variant="ghost" className="mb-4">&larr; Back to Video</Button>
       </Link>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Video</h1>
+      <div className="bg-card rounded-lg shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-text mb-6">Edit Video</h1>
 
         {error && (
           <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               id="year"
               label="Year"
@@ -194,12 +208,65 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
             />
 
             <Select
-              id="actId"
-              label="Act Category"
-              options={acts}
-              value={actId}
-              onChange={(e) => setActId(e.target.value)}
+              id="showType"
+              label="Show Type"
+              options={showTypeOptions}
+              value={showType}
+              onChange={(e) => setShowType(e.target.value as ShowType)}
             />
+          </div>
+
+          {/* Multi-select Acts */}
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-2">
+              Act Categories <span className="text-text-muted">(select all that apply)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {acts.map((act) => {
+                const isSelected = actIds.includes(act.value);
+                return (
+                  <button
+                    key={act.value}
+                    type="button"
+                    onClick={() => {
+                      setActIds(
+                        isSelected
+                          ? actIds.filter((id) => id !== act.value)
+                          : [...actIds, act.value]
+                      );
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
+                      isSelected
+                        ? 'bg-garnet text-white border-garnet'
+                        : 'bg-card text-text-secondary border-border hover:border-garnet hover:text-garnet'
+                    }`}
+                  >
+                    {isSelected && (
+                      <svg className="w-4 h-4 inline mr-1.5 -mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {act.label}
+                  </button>
+                );
+              })}
+            </div>
+            {actIds.length === 0 && (
+              <p className="mt-2 text-sm text-error flex items-center gap-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Please select at least one act
+              </p>
+            )}
+            {actIds.length > 1 && (
+              <p className="mt-2 text-sm text-gold-dark flex items-center gap-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                This video will appear in {actIds.length} act categories
+              </p>
+            )}
           </div>
 
           <PerformerSelector
@@ -208,13 +275,13 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
           />
 
           <div className="w-full">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description (optional)
+            <label htmlFor="description" className="block text-sm font-medium text-text-secondary mb-1.5">
+              Description <span className="text-text-muted">(optional)</span>
             </label>
             <textarea
               id="description"
               rows={4}
-              className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full px-4 py-3 border border-border rounded-lg resize-none bg-card text-text placeholder:text-text-light transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-garnet focus:border-transparent"
               placeholder="Add any additional details about this performance..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -222,7 +289,7 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
           </div>
 
           <div className="flex gap-4">
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || actIds.length === 0} isLoading={isSaving}>
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
             <Link href={`/videos/${id}`}>

@@ -178,13 +178,13 @@ test.describe('Performer Tagging', () => {
       const userData = await userResponse.json();
       const performerId = userData.data.id;
 
-      // Create video with performer
+      // Create video with performer (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performerId],
         },
       });
@@ -208,13 +208,13 @@ test.describe('Performer Tagging', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video without performers
+      // Create video without performers (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
         },
       });
 
@@ -236,13 +236,13 @@ test.describe('Performer Tagging', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video with empty performers
+      // Create video with empty performers (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [],
         },
       });
@@ -270,13 +270,13 @@ test.describe('Performer Tagging', () => {
       const userData = await userResponse.json();
       const performerId = userData.data.id;
 
-      // Create video with performer
+      // Create video with performer (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performerId],
         },
       });
@@ -419,13 +419,13 @@ test.describe('Performer Tagging', () => {
       const userData = await userResponse.json();
       const performerId = userData.data.id;
 
-      // Create video with performer
+      // Create video with performer (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}Display${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performerId],
         },
       });
@@ -453,13 +453,13 @@ test.describe('Performer Tagging', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video without performers
+      // Create video without performers (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}NoPerformers${Date.now()}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
         },
       });
       const videoData = await videoResponse.json();
@@ -505,13 +505,13 @@ test.describe('Performer Tagging', () => {
       const performer2 = await performer2Response.json();
       const performer3 = await performer3Response.json();
 
-      // Create video with all three performers
+      // Create video with all three performers (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: `${TEST_VIDEO_PREFIX}MultiPerformer${timestamp}`,
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performer1.data.id, performer2.data.id, performer3.data.id],
         },
       });
@@ -552,9 +552,8 @@ test.describe('Performer Tagging', () => {
       await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       await page.getByLabel('Description (optional)').fill(`${TEST_VIDEO_PREFIX}UISubmit${Date.now()}`);
 
-      // Get act options and select first one
-      const actSelect = page.locator('#actId');
-      await actSelect.selectOption({ index: 1 });
+      // V5: Click an act chip to select (instead of dropdown)
+      await page.getByRole('button', { name: 'Juggling' }).click();
 
       // Search and select performer
       const performerSearch = page.getByPlaceholder('Search for performers...');
@@ -580,9 +579,8 @@ test.describe('Performer Tagging', () => {
       const videoDescription = `${TEST_VIDEO_PREFIX}NewPerf${Date.now()}`;
       await page.getByLabel('Description (optional)').fill(videoDescription);
 
-      // Select act
-      const actSelect = page.locator('#actId');
-      await actSelect.selectOption({ index: 1 });
+      // V5: Click an act chip to select (instead of dropdown)
+      await page.getByRole('button', { name: 'Juggling' }).click();
 
       // Search for non-existent performer
       const performerSearch = page.getByPlaceholder('Search for performers...');

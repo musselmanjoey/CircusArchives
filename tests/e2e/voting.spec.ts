@@ -1,41 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { loginAsTestUser } from './helpers/auth';
-
-// Test prefixes for cleanup
-const TEST_VIDEO_PREFIX = 'E2E_VOTING_TEST_';
-
-// Helper to create a test video
-async function createTestVideo(page: Page, actId: string, year: number, performerIds?: string[]) {
-  const response = await page.request.post('/api/videos', {
-    data: {
-      youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      year,
-      description: `${TEST_VIDEO_PREFIX}${Date.now()}`,
-      actId,
-      performerIds,
-    },
-  });
-  const data = await response.json();
-  return data.data;
-}
-
-// Helper to cleanup test videos
-async function cleanupTestVideos(page: Page) {
-  try {
-    const response = await page.request.get(`/api/videos?search=${TEST_VIDEO_PREFIX}&limit=100`);
-    const data = await response.json();
-
-    if (data.data && data.data.length > 0) {
-      for (const video of data.data) {
-        if (video.description?.startsWith(TEST_VIDEO_PREFIX)) {
-          await page.request.delete(`/api/videos/${video.id}`);
-        }
-      }
-    }
-  } catch {
-    // Ignore cleanup errors
-  }
-}
+import { createTestVideo, cleanupTestVideos } from './helpers/video';
 
 test.describe('Voting System', () => {
   test.describe('Voting API', () => {
@@ -59,9 +24,9 @@ test.describe('Voting System', () => {
         // Create a test video
         const video = await createTestVideo(page, actId, 2024);
 
-        // Cast vote
+        // Cast vote (V5: requires actId)
         const voteResponse = await page.request.post('/api/votes', {
-          data: { videoId: video.id },
+          data: { videoId: video.id, actId },
         });
 
         expect(voteResponse.status()).toBe(201);
@@ -87,15 +52,15 @@ test.describe('Voting System', () => {
         const video2 = await createTestVideo(page, actId, 2024);
 
         try {
-          // Vote for first video
+          // Vote for first video (V5: requires actId)
           const vote1Response = await page.request.post('/api/votes', {
-            data: { videoId: video1.id },
+            data: { videoId: video1.id, actId },
           });
           expect(vote1Response.status()).toBe(201);
 
-          // Switch vote to second video
+          // Switch vote to second video (V5: requires actId)
           const vote2Response = await page.request.post('/api/votes', {
-            data: { videoId: video2.id },
+            data: { videoId: video2.id, actId },
           });
           expect(vote2Response.status()).toBe(200); // Updated, not created
           const vote2Data = await vote2Response.json();
@@ -127,12 +92,12 @@ test.describe('Voting System', () => {
         const video2 = await createTestVideo(page, act2Id, 2024);
 
         try {
-          // Vote for both
+          // Vote for both (V5: requires actId for each)
           const vote1Response = await page.request.post('/api/votes', {
-            data: { videoId: video1.id },
+            data: { videoId: video1.id, actId: act1Id },
           });
           const vote2Response = await page.request.post('/api/votes', {
-            data: { videoId: video2.id },
+            data: { videoId: video2.id, actId: act2Id },
           });
 
           expect(vote1Response.status()).toBe(201);
@@ -147,8 +112,13 @@ test.describe('Voting System', () => {
       test('should reject vote for non-existent video', async ({ page }) => {
         await loginAsTestUser(page);
 
+        // Get a valid act ID for the request
+        const actsResponse = await page.request.get('/api/acts');
+        const actsData = await actsResponse.json();
+        const actId = actsData.data[0].id;
+
         const response = await page.request.post('/api/votes', {
-          data: { videoId: 'non-existent-video-id' },
+          data: { videoId: 'non-existent-video-id', actId },
         });
 
         expect(response.status()).toBe(404);
@@ -186,7 +156,7 @@ test.describe('Voting System', () => {
 
         try {
           await page.request.post('/api/votes', {
-            data: { videoId: video.id },
+            data: { videoId: video.id, actId },
           });
 
           // Get user's votes
@@ -234,7 +204,7 @@ test.describe('Voting System', () => {
 
         try {
           await page.request.post('/api/votes', {
-            data: { videoId: video.id },
+            data: { videoId: video.id, actId },
           });
 
           // Delete the vote
@@ -301,12 +271,12 @@ test.describe('Voting System', () => {
         const sessionData = await session.json();
         const userId = sessionData.user.id;
 
-        // Create a video where this user is a performer
-        const video = await createTestVideo(page, actId, 2024, [userId]);
+        // Create a video where this user is a performer (V5 signature)
+        const video = await createTestVideo(page, actId, 2024, { performerIds: [userId] });
 
-        // Vote for this video (should count as 2)
+        // Vote for this video (should count as 2) - V5: requires actId
         await page.request.post('/api/votes', {
-          data: { videoId: video.id },
+          data: { videoId: video.id, actId },
         });
 
         // Get rankings
@@ -369,7 +339,7 @@ test.describe('Voting System', () => {
         // Create and vote for a video
         const video = await createTestVideo(page, actId, 2024);
         await page.request.post('/api/votes', {
-          data: { videoId: video.id },
+          data: { videoId: video.id, actId },
         });
 
         // Get voters list
@@ -400,12 +370,12 @@ test.describe('Voting System', () => {
         const sessionData = await session.json();
         const userId = sessionData.user.id;
 
-        // Create video where user is a performer
-        const video = await createTestVideo(page, actId, 2024, [userId]);
+        // Create video where user is a performer (V5 signature)
+        const video = await createTestVideo(page, actId, 2024, { performerIds: [userId] });
 
-        // Vote for it
+        // Vote for it (V5: requires actId)
         await page.request.post('/api/votes', {
-          data: { videoId: video.id },
+          data: { videoId: video.id, actId },
         });
 
         // Get voters list
@@ -519,9 +489,9 @@ test.describe('Voting System', () => {
       // Create a test video
       const video = await createTestVideo(page, actId, 2024);
 
-      // Vote for it
+      // Vote for it (V5: requires actId)
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       // Navigate to video page
@@ -556,9 +526,9 @@ test.describe('Voting System', () => {
       const video2 = await createTestVideo(page, actId, 2024);
 
       try {
-        // Vote for first video
+        // Vote for first video (V5: requires actId)
         await page.request.post('/api/votes', {
-          data: { videoId: video1.id },
+          data: { videoId: video1.id, actId },
         });
 
         // Navigate to second video page
@@ -650,9 +620,9 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
 
-      // Vote for it via API
+      // Vote for it via API (V5: requires actId)
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       // Navigate to video page
@@ -688,9 +658,9 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
 
-      // Vote for it
+      // Vote for it (V5: requires actId)
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto(`/videos/${video.id}`);
@@ -724,12 +694,12 @@ test.describe('Voting System', () => {
       const sessionData = await session.json();
       const userId = sessionData.user.id;
 
-      // Create video where user is a performer
-      const video = await createTestVideo(page, actId, 2024, [userId]);
+      // Create video where user is a performer (V5 signature)
+      const video = await createTestVideo(page, actId, 2024, { performerIds: [userId] });
 
-      // Vote for it
+      // Vote for it (V5: requires actId)
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto(`/videos/${video.id}`);
@@ -774,10 +744,10 @@ test.describe('Voting System', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create a video and vote for it
+      // Create a video and vote for it (V5: requires actId)
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       // Go to homepage
@@ -804,7 +774,7 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -828,7 +798,7 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -848,7 +818,7 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -871,7 +841,7 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -894,9 +864,9 @@ test.describe('Voting System', () => {
       const sessionData = await session.json();
       const userId = sessionData.user.id;
 
-      const video = await createTestVideo(page, actId, 2024, [userId]);
+      const video = await createTestVideo(page, actId, 2024, { performerIds: [userId] });
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -927,9 +897,9 @@ test.describe('Voting System', () => {
         performers.push(data.data.id);
       }
 
-      const video = await createTestVideo(page, actId, 2024, performers);
+      const video = await createTestVideo(page, actId, 2024, { performerIds: performers });
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');
@@ -981,7 +951,7 @@ test.describe('Voting System', () => {
 
       const video = await createTestVideo(page, actId, 2024);
       await page.request.post('/api/votes', {
-        data: { videoId: video.id },
+        data: { videoId: video.id, actId },
       });
 
       await page.goto('/');

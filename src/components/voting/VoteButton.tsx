@@ -53,7 +53,7 @@ export function VoteButton({ videoId, actId, actName, onVoteChange }: VoteButton
       const response = await fetch('/api/votes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId }),
+        body: JSON.stringify({ videoId, actId }),
       });
 
       if (response.ok) {
