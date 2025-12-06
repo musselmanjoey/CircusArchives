@@ -10,6 +10,7 @@ const navItems = [
   { href: '/', label: 'Best Videos' },
   { href: '/videos', label: 'Browse' },
   { href: '/submit', label: 'Submit Video' },
+  { href: '/about', label: 'About' },
 ];
 
 export function Navigation() {

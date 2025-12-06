@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { VideoGrid } from '@/components/video/VideoGrid';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FilterPanel } from '@/components/search/FilterPanel';
@@ -8,12 +9,18 @@ import type { Video, VideoFilters, Act, ApiResponse, PaginatedResponse, Performe
 import type { SelectOption } from '@/components/ui/Select';
 
 export default function VideosPage() {
-  const [filters, setFilters] = useState<VideoFilters>({});
+  const searchParams = useSearchParams();
+  const initialActId = searchParams.get('actId') || undefined;
+  const sortParam = searchParams.get('sort') || undefined;
+
+  const [filters, setFilters] = useState<VideoFilters>({ actId: initialActId });
+  const [sortBy, setSortBy] = useState<string | undefined>(sortParam);
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<Video[]>([]);
   const [acts, setActs] = useState<SelectOption[]>([]);
   const [performers, setPerformers] = useState<SelectOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [actName, setActName] = useState<string | null>(null);
 
   // Fetch acts and performers
   useEffect(() => {
@@ -32,6 +39,14 @@ export default function VideosPage() {
               label: act.name,
             }));
             setActs(actOptions);
+
+            // Set act name if filtering by act
+            if (initialActId) {
+              const selectedAct = actsResult.data.find((a) => a.id === initialActId);
+              if (selectedAct) {
+                setActName(selectedAct.name);
+              }
+            }
           }
         }
 
@@ -63,6 +78,7 @@ export default function VideosPage() {
         if (filters.year) params.append('year', filters.year.toString());
         if (filters.search) params.append('search', filters.search);
         if (filters.performerId) params.append('performerId', filters.performerId);
+        if (sortBy) params.append('sort', sortBy);
 
         const response = await fetch(`/api/videos?${params.toString()}`);
         if (!response.ok) throw new Error('Failed to fetch videos');
@@ -77,7 +93,7 @@ export default function VideosPage() {
     };
 
     fetchVideos();
-  }, [filters]);
+  }, [filters, sortBy]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -88,10 +104,20 @@ export default function VideosPage() {
     setFilters(newFilters);
   };
 
+  // Determine page title based on sort and filter
+  const isLeaderboard = sortBy === 'votes' && actName;
+  const pageTitle = isLeaderboard ? `${actName} Leaderboard` : 'Browse Videos';
+  const pageSubtitle = isLeaderboard
+    ? 'Videos ranked by community votes. Performer votes count double!'
+    : null;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Browse Videos</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{pageTitle}</h1>
+        {pageSubtitle && (
+          <p className="text-gray-600 mb-4">{pageSubtitle}</p>
+        )}
         <div className="space-y-4">
           <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
           <FilterPanel

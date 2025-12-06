@@ -86,6 +86,27 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// V4: Comment types
+export interface Comment {
+  id: string;
+  content: string;
+  userId: string;
+  user?: Performer;
+  videoId: string;
+  video?: Video;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CommentCreateInput {
+  content: string;
+  videoId: string;
+}
+
+export interface CommentUpdateInput {
+  content: string;
+}
+
 // V3: Voting types
 export interface Vote {
   id: string;

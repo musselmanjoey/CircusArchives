@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Button } from '@/components/ui/Button';
 import { VoteInfo } from '@/components/voting/VoteInfo';
+import { CommentSection } from '@/components/comments';
 import type { Video, ApiResponse } from '@/types';
 
 interface VideoPageProps {
@@ -160,6 +161,10 @@ export default function VideoPage({ params }: VideoPageProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <CommentSection videoId={video.id} />
       </div>
     </div>
   );

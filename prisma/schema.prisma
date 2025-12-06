@@ -41,9 +41,8 @@ model Video {
   // V3: Voting
   votes       Vote[]
 
-  // Future relations (V4+)
-  // comments   Comment[]
-  // tags       VideoTag[]
+  // V4: Comments
+  comments    Comment[]
 
   @@map("videos")
 }
@@ -68,6 +67,7 @@ model User {
   videos        Video[]          @relation("UploadedVideos")
   performances  VideoPerformer[]
   votes         Vote[]
+  comments      Comment[]
 
   @@map("users")
 }
@@ -114,6 +114,20 @@ model VideoPerformer {
 
   @@unique([videoId, userId])
   @@map("video_performers")
+}
+
+// V4: Comments
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.VarChar(140) // Tweet-length limit
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId   String   @map("video_id")
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("comments")
 }
 
 // V3: Voting System
