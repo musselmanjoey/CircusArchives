@@ -1,0 +1,37 @@
+{
+  "description": "Remaining videos to upload (hit daily limit on first batch)",
+  "videos": [
+    {
+      "title": "Teeterboard - FSU Flying High Circus Callaway 2018",
+      "filename": "teeterboard_callaway_2018",
+      "source_id": "MIyWB3cUAY0",
+      "act": "Teeterboard",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus Callaway 2018",
+      "filename": "juggling_callaway_2018",
+      "source_id": "wMML4WyTNhA",
+      "act": "Juggling",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Quartet Adagio - FSU Flying High Circus Callaway 2018",
+      "filename": "quartet_callaway_2018",
+      "source_id": "ltY1RqtLqOU",
+      "act": "Quartet Adagio",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus 2018",
+      "filename": "juggling_2018",
+      "source_id": "D-x-PR3K78k",
+      "act": "Juggling",
+      "year": 2018,
+      "show": "Home Show"
+    }
+  ]
+}

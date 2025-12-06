@@ -51,3 +51,10 @@ next-env.d.ts
 
 # claude code local settings
 .claude/settings.local.json
+
+# youtube tools credentials
+tools/youtube/credentials/
+client_secret*.json
+
+# youtube tools output (downloaded/merged videos)
+tools/youtube/output/

@@ -1,0 +1,135 @@
+{
+  "description": "Videos to migrate from old YouTube account to Circus Archives channel",
+  "videos": [
+    {
+      "title": "Juggling - FSU Flying High Circus 2016",
+      "filename": "juggling_2016",
+      "source_id": "-GCeTZuCUOo",
+      "act": "Juggling",
+      "year": 2016,
+      "show": "Home Show"
+    },
+    {
+      "title": "Double and Triple Trapeze - FSU Flying High Circus",
+      "filename": "double_triple_trapeze",
+      "source_id": "WQ2OYTcgddI",
+      "act": "Double Trapeze",
+      "year": null,
+      "show": null,
+      "notes": "Need to add multi-act functionality for stuff like this"
+    },
+    {
+      "title": "Russian Bar - FSU Flying High Circus Callaway 2017",
+      "filename": "russian_bar_callaway_2017",
+      "act": "Russian Bar",
+      "year": 2017,
+      "show": "Callaway Gardens",
+      "merge_sources": [
+        "vZPqCw-XgY8",
+        "H79CaUVvTHs",
+        "Vq4S3bt1wV0"
+      ]
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus Callaway 2017",
+      "filename": "juggling_callaway_2017",
+      "act": "Juggling",
+      "year": 2017,
+      "show": "Callaway Gardens",
+      "merge_sources": [
+        "cqax65W_m_8",
+        "6ExP2UZ9X8c",
+        "cOvksYOkNCI",
+        "yqOh8gRXCwk",
+        "zEaDEn-FAtQ",
+        "K0NXUu_Jr98",
+        "Bach5P2CmMI"
+      ]
+    },
+    {
+      "title": "Quartet Adagio - FSU Flying High Circus Callaway 2017",
+      "filename": "quartet_callaway_2017",
+      "act": "Quartet Adagio",
+      "year": 2017,
+      "show": "Callaway Gardens",
+      "merge_sources": [
+        "g9vBtlZXJpk",
+        "zta4RBZdjjo",
+        "H5PmX3hSWP4",
+        "8QCd8vmxi8I"
+      ]
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus 2017",
+      "filename": "juggling_2017",
+      "source_id": "a4bsT_Tr90w",
+      "act": "Juggling",
+      "year": 2017,
+      "show": "Home Show"
+    },
+    {
+      "title": "Quartet Adagio - FSU Flying High Circus 2017",
+      "filename": "quartet_2017",
+      "source_id": "qDoM2v_8CFw",
+      "act": "Quartet Adagio",
+      "year": 2017,
+      "show": "Home Show"
+    },
+    {
+      "title": "Russian Bar - FSU Flying High Circus 2018",
+      "filename": "russian_bar_2018",
+      "source_id": "mn7UODMfIAY",
+      "act": "Russian Bar",
+      "year": 2018,
+      "show": "Home Show"
+    },
+    {
+      "title": "Quartet Adagio - FSU Flying High Circus 2018",
+      "filename": "quartet_2018",
+      "source_id": "8dMkwdOYw7c",
+      "act": "Quartet Adagio",
+      "year": 2018,
+      "show": "Home Show"
+    },
+    {
+      "title": "Teeterboard - FSU Flying High Circus 2018",
+      "filename": "teeterboard_2018",
+      "source_id": "OygejZws2ZI",
+      "act": "Teeterboard",
+      "year": 2018,
+      "show": "Home Show"
+    },
+    {
+      "title": "Teeterboard - FSU Flying High Circus Callaway 2018",
+      "filename": "teeterboard_callaway_2018",
+      "source_id": "MIyWB3cUAY0",
+      "act": "Teeterboard",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus Callaway 2018",
+      "filename": "juggling_callaway_2018",
+      "source_id": "wMML4WyTNhA",
+      "act": "Juggling",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Quartet Adagio - FSU Flying High Circus Callaway 2018",
+      "filename": "quartet_callaway_2018",
+      "source_id": "ltY1RqtLqOU",
+      "act": "Quartet Adagio",
+      "year": 2018,
+      "show": "Callaway Gardens"
+    },
+    {
+      "title": "Juggling - FSU Flying High Circus 2018",
+      "filename": "juggling_2018",
+      "source_id": "D-x-PR3K78k",
+      "act": "Juggling",
+      "year": 2018,
+      "show": "Home Show"
+    }
+  ]
+}
