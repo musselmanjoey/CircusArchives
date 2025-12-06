@@ -38,6 +38,7 @@ export interface Video {
   uploaderId?: string;
   uploader?: User;
   performers?: VideoPerformer[];
+  voteCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -41,32 +41,32 @@ export function CommentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Share your thoughts..."
         disabled={disabled || isSubmitting}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+        className="w-full px-4 py-3 border border-border rounded-lg resize-none bg-card text-text placeholder:text-text-light transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-garnet focus:border-transparent disabled:bg-surface disabled:text-text-muted"
         rows={3}
       />
       <div className="flex items-center justify-between">
         <span
-          className={`text-sm ${
+          className={`text-sm font-medium ${
             isOverLimit
-              ? 'text-red-600 font-medium'
+              ? 'text-error'
               : remainingChars <= 20
-              ? 'text-yellow-600'
-              : 'text-gray-500'
+              ? 'text-warning'
+              : 'text-text-muted'
           }`}
         >
-          {remainingChars}
+          {remainingChars} characters
         </span>
         <div className="flex gap-2">
           {onCancel && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={onCancel}
               disabled={isSubmitting}
@@ -78,6 +78,7 @@ export function CommentForm({
             type="submit"
             size="sm"
             disabled={isEmpty || isOverLimit || isSubmitting || disabled}
+            isLoading={isSubmitting}
           >
             {isSubmitting ? 'Posting...' : submitLabel}
           </Button>

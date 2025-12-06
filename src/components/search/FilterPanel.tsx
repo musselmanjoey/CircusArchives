@@ -24,31 +24,50 @@ export function FilterPanel({ acts, performers, filters, onFilterChange }: Filte
     onFilterChange({ ...filters, performerId: performerId || undefined });
   };
 
+  const hasActiveFilters = filters.actId || filters.year || filters.performerId;
+
+  const clearFilters = () => {
+    onFilterChange({ search: filters.search });
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
-      <div className="w-full sm:w-48">
-        <Select
-          id="act-filter"
-          label="Act Category"
-          options={[{ value: '', label: 'All Acts' }, ...acts]}
-          value={filters.actId || ''}
-          onChange={(e) => handleActChange(e.target.value)}
-        />
-      </div>
-      <div className="w-full sm:w-48">
-        <Select
-          id="performer-filter"
-          label="Performer"
-          options={[{ value: '', label: 'All Performers' }, ...performers]}
-          value={filters.performerId || ''}
-          onChange={(e) => handlePerformerChange(e.target.value)}
-        />
-      </div>
-      <div className="w-full sm:w-36">
-        <YearFilter
-          selectedYear={filters.year}
-          onChange={handleYearChange}
-        />
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="w-full sm:w-auto sm:min-w-[180px]">
+          <Select
+            id="act-filter"
+            label="Act Category"
+            options={[{ value: '', label: 'All Acts' }, ...acts]}
+            value={filters.actId || ''}
+            onChange={(e) => handleActChange(e.target.value)}
+          />
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[180px]">
+          <Select
+            id="performer-filter"
+            label="Performer"
+            options={[{ value: '', label: 'All Performers' }, ...performers]}
+            value={filters.performerId || ''}
+            onChange={(e) => handlePerformerChange(e.target.value)}
+          />
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[140px]">
+          <YearFilter
+            selectedYear={filters.year}
+            onChange={handleYearChange}
+          />
+        </div>
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="h-11 px-4 text-sm font-medium text-garnet hover:text-garnet-dark transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear filters
+          </button>
+        )}
       </div>
     </div>
   );

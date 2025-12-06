@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { VideoGrid } from '@/components/video/VideoGrid';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FilterPanel } from '@/components/search/FilterPanel';
+import { Card } from '@/components/ui/Card';
 import type { Video, VideoFilters, Act, ApiResponse, PaginatedResponse, Performer } from '@/types';
 import type { SelectOption } from '@/components/ui/Select';
 
@@ -22,7 +23,6 @@ function VideosContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [actName, setActName] = useState<string | null>(null);
 
-  // Fetch acts and performers
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -40,7 +40,6 @@ function VideosContent() {
             }));
             setActs(actOptions);
 
-            // Set act name if filtering by act
             if (initialActId) {
               const selectedAct = actsResult.data.find((a) => a.id === initialActId);
               if (selectedAct) {
@@ -60,15 +59,14 @@ function VideosContent() {
             setPerformers(performerOptions);
           }
         }
-      } catch (error) {
-        console.error('Error fetching filters:', error);
+      } catch {
+        // Handle error silently
       }
     };
 
     fetchFilters();
-  }, []);
+  }, [initialActId]);
 
-  // Fetch videos based on filters
   useEffect(() => {
     const fetchVideos = async () => {
       setIsLoading(true);
@@ -85,8 +83,8 @@ function VideosContent() {
 
         const result: PaginatedResponse<Video> = await response.json();
         setVideos(result.data);
-      } catch (error) {
-        console.error('Error fetching videos:', error);
+      } catch {
+        // Handle error silently
       } finally {
         setIsLoading(false);
       }
@@ -104,20 +102,33 @@ function VideosContent() {
     setFilters(newFilters);
   };
 
-  // Determine page title based on sort and filter
   const isLeaderboard = sortBy === 'votes' && actName;
   const pageTitle = isLeaderboard ? `${actName} Leaderboard` : 'Browse Videos';
   const pageSubtitle = isLeaderboard
     ? 'Videos ranked by community votes. Performer votes count double!'
-    : null;
+    : 'Explore the FSU Flying High Circus video archive';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{pageTitle}</h1>
-        {pageSubtitle && (
-          <p className="text-gray-600 mb-4">{pageSubtitle}</p>
-        )}
+    <div className="min-h-[80vh]">
+      {/* Page Header */}
+      <div className="bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center gap-3 mb-2">
+            {isLeaderboard && (
+              <div className="w-10 h-10 bg-gold rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-garnet-dark" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              </div>
+            )}
+            <h1 className="text-2xl sm:text-3xl font-bold text-text">{pageTitle}</h1>
+          </div>
+          <p className="text-text-muted">{pageSubtitle}</p>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-4">
           <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
           <FilterPanel
@@ -129,16 +140,35 @@ function VideosContent() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading videos...</p>
-        </div>
-      ) : (
-        <VideoGrid
-          videos={videos}
-          emptyMessage="No videos found. Be the first to submit a video!"
-        />
-      )}
+      {/* Results */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {/* Results count */}
+        {!isLoading && videos.length > 0 && (
+          <p className="text-sm text-text-muted mb-4">
+            Showing {videos.length} video{videos.length !== 1 ? 's' : ''}
+          </p>
+        )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="aspect-video skeleton" />
+                <div className="p-4">
+                  <div className="h-5 skeleton rounded w-2/3 mb-2" />
+                  <div className="h-4 skeleton rounded w-1/2" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <VideoGrid
+            videos={videos}
+            emptyMessage="No videos found matching your criteria. Try adjusting your filters."
+            showVotes={!!isLeaderboard}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -146,9 +176,16 @@ function VideosContent() {
 export default function VideosPage() {
   return (
     <Suspense fallback={
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-[80vh]">
+        <div className="bg-card border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="h-8 skeleton rounded w-48 mb-2" />
+            <div className="h-5 skeleton rounded w-72" />
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="h-12 skeleton rounded-xl mb-4" />
+          <div className="h-24 skeleton rounded-xl" />
         </div>
       </div>
     }>

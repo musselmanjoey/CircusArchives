@@ -26,6 +26,8 @@ export function CommentItem({
     ? `${comment.user.firstName} ${comment.user.lastName}`
     : 'Unknown';
 
+  const authorInitial = comment.user?.firstName?.charAt(0).toUpperCase() || '?';
+
   const formattedDate = new Date(comment.createdAt).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -49,7 +51,7 @@ export function CommentItem({
 
   if (isEditing) {
     return (
-      <div className="py-3 border-b border-gray-100 last:border-b-0">
+      <div className="py-4">
         <CommentForm
           onSubmit={handleEdit}
           initialValue={comment.content}
@@ -61,38 +63,42 @@ export function CommentItem({
   }
 
   return (
-    <div className="py-3 border-b border-gray-100 last:border-b-0">
-      <div className="flex items-start justify-between gap-2">
+    <div className="py-4">
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <div className="w-8 h-8 bg-garnet/10 rounded-full flex items-center justify-center shrink-0">
+          <span className="text-sm font-medium text-garnet">{authorInitial}</span>
+        </div>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-gray-900 text-sm">{authorName}</span>
-            <span className="text-gray-400 text-xs">{formattedDate}</span>
+            <span className="font-medium text-text text-sm">{authorName}</span>
+            <span className="text-text-light text-xs">{formattedDate}</span>
           </div>
-          <p className="text-gray-700 text-sm whitespace-pre-wrap break-words">
+          <p className="text-text-secondary text-sm whitespace-pre-wrap break-words">
             {comment.content}
           </p>
+
+          {/* Actions */}
+          {isOwner && (
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-text-muted hover:text-garnet transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-xs text-text-muted hover:text-error transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          )}
         </div>
-        {isOwner && (
-          <div className="flex gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="text-gray-500 hover:text-gray-700 px-2"
-            >
-              Edit
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-red-500 hover:text-red-700 px-2"
-            >
-              {isDeleting ? '...' : 'Delete'}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
