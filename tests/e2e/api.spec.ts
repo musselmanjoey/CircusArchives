@@ -74,9 +74,11 @@ test.describe('API Endpoints', () => {
         const data = await response.json();
         expect(data).toHaveProperty('data');
 
-        // All returned videos should have the correct actId
+        // V5: All returned videos should have the actId in their acts array
         for (const video of data.data) {
-          expect(video.actId).toBe(actId);
+          const hasAct = video.acts?.some((va: { actId: string }) => va.actId === actId) ||
+                         video.act?.id === actId;
+          expect(hasAct).toBeTruthy();
         }
       }
     });
@@ -232,16 +234,17 @@ test.describe('API Endpoints', () => {
       // Log in
       await loginAsTestUser(page, 'Owner', 'Deleter');
 
-      // Get an act ID for creating a video
+      // Get an act for creating a video
       const actsResponse = await page.request.get('/api/acts');
       const actsData = await actsResponse.json();
-      const actId = actsData.data[0].id;
+      const actName = actsData.data[0].name;
 
       // Create a video via the form (so we own it) - no title field, it's auto-generated
       const uniqueDescription = `DELETE_TEST_VIDEO_${Date.now()}`;
       await page.goto('/submit');
       await page.locator('#youtubeUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-      await page.locator('#actId').selectOption(actId);
+      // V5: Click act chip to select instead of dropdown
+      await page.getByRole('button', { name: actName }).click();
       await page.getByLabel('Description (optional)').fill(uniqueDescription);
       await page.getByRole('button', { name: 'Submit Video' }).click();
 

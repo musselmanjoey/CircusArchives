@@ -67,12 +67,13 @@ test.describe('Browse Page Filters', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create a video with this performer
+      // Create a video with this performer (V5: use actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           description: TEST_VIDEO_PREFIX + 'filter test',
           performerIds: [performerId],
         },
@@ -151,12 +152,13 @@ test.describe('Browse Page Filters', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video with performer
+      // Create video with performer (V5: use actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performerId],
         },
       });
@@ -235,13 +237,14 @@ test.describe('Browse Page Filters', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video with unique description
+      // Create video with unique description (V5: use actIds array + showType)
       const uniqueWord = `unique${Date.now()}`;
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           description: `${TEST_VIDEO_PREFIX} ${uniqueWord} description`,
         },
       });

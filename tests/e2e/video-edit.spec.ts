@@ -4,7 +4,7 @@ import { loginAsTestUser, signOutUser } from './helpers/auth';
 // Prefix for test data
 const TEST_VIDEO_PREFIX = 'E2E_EDIT_TEST_';
 
-// Helper to create a test video and return its ID
+// Helper to create a test video and return its ID (V5 compatible)
 async function createTestVideo(page: Page, actIndex = 1): Promise<string> {
   const actsResponse = await page.request.get('/api/acts');
   const actsData = await actsResponse.json();
@@ -14,12 +14,16 @@ async function createTestVideo(page: Page, actIndex = 1): Promise<string> {
     data: {
       youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       year: 2024,
-      actId: actId,
+      actIds: [actId],
+      showType: 'HOME',
       description: `${TEST_VIDEO_PREFIX}description`,
     },
   });
 
   const videoData = await videoResponse.json();
+  if (!videoData.data?.id) {
+    throw new Error(`Failed to create video: ${JSON.stringify(videoData)}`);
+  }
   return videoData.data.id;
 }
 
@@ -110,14 +114,16 @@ test.describe('Video Edit', () => {
       const newActId = actsData.data[1].id;
       const newActName = actsData.data[1].name;
 
+      // V5: use actIds array instead of actId
       const response = await page.request.patch(`/api/videos/${videoId}`, {
-        data: { actId: newActId },
+        data: { actIds: [newActId] },
       });
 
       expect(response.status()).toBe(200);
 
       const data = await response.json();
-      expect(data.data.actId).toBe(newActId);
+      // V5: check acts array or legacy act field
+      expect(data.data.acts[0].actId).toBe(newActId);
       expect(data.data.title).toContain(newActName);
 
       // Cleanup
@@ -182,12 +188,13 @@ test.describe('Video Edit', () => {
       const actsData = await actsResponse.json();
       const actId = actsData.data[0].id;
 
-      // Create video with performer
+      // Create video with performer (V5: uses actIds array + showType)
       const videoResponse = await page.request.post('/api/videos', {
         data: {
           youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           year: 2024,
-          actId: actId,
+          actIds: [actId],
+          showType: 'HOME',
           performerIds: [performerId],
         },
       });
