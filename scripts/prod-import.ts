@@ -2,16 +2,22 @@
  * Prod Video Import Script
  *
  * Usage:
- *   DATABASE_URL="postgresql://..." npx ts-node scripts/prod-import.ts
+ *   PROD_DATABASE_URL="postgresql://..." npx tsx scripts/prod-import.ts
  *
  * Or on Windows:
- *   set DATABASE_URL=postgresql://... && npx ts-node scripts/prod-import.ts
+ *   set PROD_DATABASE_URL=postgresql://... && npx tsx scripts/prod-import.ts
  */
 
 import { PrismaClient, ShowType } from '@prisma/client';
 
-// Hardcode prod URL to bypass local .env
-const PROD_URL = 'postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway';
+// Use PROD_DATABASE_URL env var for Railway prod
+const PROD_URL = process.env.PROD_DATABASE_URL;
+
+if (!PROD_URL) {
+  console.error('Error: PROD_DATABASE_URL environment variable is required');
+  console.error('Usage: PROD_DATABASE_URL="postgresql://..." npx tsx scripts/prod-import.ts');
+  process.exit(1);
+}
 
 const prisma = new PrismaClient({
   datasources: {

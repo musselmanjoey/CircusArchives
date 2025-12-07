@@ -1,6 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 
-const PROD_URL = 'postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway';
+// Use PROD_DATABASE_URL env var for Railway prod
+// Run with: PROD_DATABASE_URL="postgresql://..." npx tsx scripts/set-uploader.ts
+const PROD_URL = process.env.PROD_DATABASE_URL;
+
+if (!PROD_URL) {
+  console.error('Error: PROD_DATABASE_URL environment variable is required');
+  console.error('Usage: PROD_DATABASE_URL="postgresql://..." npx tsx scripts/set-uploader.ts');
+  process.exit(1);
+}
 
 const prisma = new PrismaClient({
   datasources: {
