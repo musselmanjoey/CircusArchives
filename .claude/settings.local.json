@@ -8,7 +8,19 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
       "Bash(npx playwright test:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git pull:*)",
+      "Bash(set \"DATABASE_URL=postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx prisma migrate:*)",
+      "Bash(git push:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx ts-node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx tsx:*)",
+      "Bash(set DATABASE_URL=postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway)",
+      "WebFetch(domain:www.flyinghighcircusarchives.com)",
+      "Bash(npx vercel env ls)",
+      "Bash(npx vercel env pull:*)",
+      "Bash(npx dotenv:*)"
     ],
     "deny": [],
     "ask": []

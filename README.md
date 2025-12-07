@@ -39,7 +39,15 @@ Following the tornado that damaged the circus tent and caused a multi-year disru
 - About page (FSU Flying High Circus history)
 - Support page (developer info with Venmo)
 
-### V5+ - Future
+### V5 - Multi-Act & UI Overhaul ✅
+- Videos can belong to multiple act categories
+- Show type classification (Home Show vs Callaway Show)
+- Per-act voting (vote for same video in different categories)
+- FSU Garnet & Gold color scheme
+- Mobile-responsive design with hamburger menu
+- Chip-based multi-select for acts
+
+### V6+ - Future
 - Facebook/Google OAuth
 - Email invites and alumni verification
 

@@ -32,7 +32,8 @@ npx prisma studio        # Visual DB browser
 - V2 ✅ Auth + Performer Tagging (NextAuth, name login, tag performers)
 - V3 ✅ Voting (one vote per act, performer 2x bonus, rankings homepage)
 - V4 ✅ Comments + Leaderboard + About/Support (140-char comments, act leaderboards, static pages)
-- V5 Planned: OAuth + Email invites
+- V5 ✅ Multi-Act + Show Type + UI Overhaul (multi-act videos, Home/Callaway shows, FSU branding, mobile-responsive)
+- V6 Planned: OAuth + Email invites
 
 ## IMPORTANT
 - YouTube-only video hosting (firm constraint)
