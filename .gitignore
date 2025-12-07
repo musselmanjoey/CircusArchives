@@ -58,3 +58,6 @@ client_secret*.json
 
 # youtube tools output (downloaded/merged videos)
 tools/youtube/output/
+
+# local video uploads (dev storage)
+/uploads/

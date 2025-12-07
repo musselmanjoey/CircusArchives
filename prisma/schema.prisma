@@ -94,6 +94,7 @@ model User {
   performances  VideoPerformer[]
   votes         Vote[]
   comments      Comment[]
+  uploadQueue   UploadQueue[]
 
   @@map("users")
 }
@@ -170,4 +171,54 @@ model Vote {
 
   @@unique([userId, actId]) // One vote per user per act
   @@map("votes")
+}
+
+// V6: Upload Queue Status
+enum UploadStatus {
+  PENDING
+  UPLOADED
+  FAILED
+}
+
+// V6: Upload Queue for video files awaiting YouTube upload
+model UploadQueue {
+  id           String       @id @default(uuid())
+
+  // File info
+  fileName     String       @map("file_name")
+  fileSize     Int          @map("file_size") // bytes
+  blobUrl      String       @map("blob_url")
+
+  // Video metadata (user-provided)
+  title        String
+  year         Int
+  description  String?
+  showType     ShowType     @map("show_type")
+  actIds       String[]     @map("act_ids") // Store act IDs as array
+  performerIds String[]     @map("performer_ids") @default([])
+
+  // Queue status
+  status       UploadStatus @default(PENDING)
+  youtubeUrl   String?      @map("youtube_url") // Filled after manual upload
+  errorMessage String?      @map("error_message")
+
+  // Tracking
+  uploaderId   String       @map("uploader_id")
+  uploader     User         @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  processedAt  DateTime?    @map("processed_at") // When uploaded to YouTube
+
+  @@map("upload_queue")
+}
+
+// V6: Track daily YouTube uploads for rate limiting
+model DailyUploadCount {
+  id        String   @id @default(uuid())
+  date      DateTime @unique @db.Date // Just the date part
+  count     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("daily_upload_counts")
 }

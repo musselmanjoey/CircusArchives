@@ -4,19 +4,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { VideoSubmitForm, type VideoFormData } from '@/components/video/VideoSubmitForm';
 import { VideoUploadForm } from '@/components/video/VideoUploadForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { SelectOption } from '@/components/ui/Select';
 import type { Act, ApiResponse, UploadQueueItem } from '@/types';
 
-type SubmitMode = 'upload' | 'youtube';
-
-export default function SubmitPage() {
+export default function UploadPage() {
   const router = useRouter();
   const { data: session, status: authStatus } = useSession();
-  const [mode, setMode] = useState<SubmitMode>('upload');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [acts, setActs] = useState<SelectOption[]>([]);
   const [isLoadingActs, setIsLoadingActs] = useState(true);
@@ -46,34 +42,7 @@ export default function SubmitPage() {
     fetchActs();
   }, []);
 
-  // Handle YouTube URL submission
-  const handleYouTubeSubmit = async (data: VideoFormData) => {
-    try {
-      setErrorMessage('');
-      const response = await fetch('/api/videos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result: ApiResponse<unknown> = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to submit video');
-      }
-
-      setSubmitStatus('success');
-      setTimeout(() => router.push('/videos'), 2000);
-    } catch (error) {
-      setSubmitStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to submit video');
-    }
-  };
-
-  // Handle file upload
-  const handleUploadSubmit = async (formData: FormData) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
       setErrorMessage('');
       const response = await fetch('/api/upload', {
@@ -92,11 +61,6 @@ export default function SubmitPage() {
       setSubmitStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Failed to upload video');
     }
-  };
-
-  const resetForm = () => {
-    setSubmitStatus('idle');
-    setErrorMessage('');
   };
 
   // Loading state
@@ -129,9 +93,9 @@ export default function SubmitPage() {
           </CardHeader>
           <CardContent className="text-center pt-4">
             <p className="text-text-muted mb-6">
-              You need to sign in to submit videos to the archive.
+              You need to sign in to upload videos to the archive.
             </p>
-            <Link href={`/login?callbackUrl=${encodeURIComponent('/submit')}`}>
+            <Link href={`/login?callbackUrl=${encodeURIComponent('/upload')}`}>
               <Button size="lg" className="w-full">Sign In to Continue</Button>
             </Link>
             <div className="mt-4">
@@ -153,53 +117,34 @@ export default function SubmitPage() {
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-garnet rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-text">Submit a Video</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-text">Upload Video</h1>
           </div>
           <p className="text-text-muted">
-            Share a circus performance video to add it to our archive.
+            Upload a video file directly from your device. It will be queued for YouTube upload.
           </p>
           <p className="text-sm text-text-secondary mt-2">
-            Submitting as <span className="font-medium text-garnet">{session.user?.name}</span>
+            Uploading as <span className="font-medium text-garnet">{session.user?.name}</span>
           </p>
         </div>
       </div>
 
       {/* Form Section */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mode Toggle */}
-        {submitStatus === 'idle' && (
-          <div className="flex rounded-xl bg-surface p-1 mb-6">
-            <button
-              onClick={() => { setMode('upload'); resetForm(); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === 'upload'
-                  ? 'bg-card text-garnet shadow-sm'
-                  : 'text-text-muted hover:text-text'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Upload Video
-            </button>
-            <button
-              onClick={() => { setMode('youtube'); resetForm(); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === 'youtube'
-                  ? 'bg-card text-garnet shadow-sm'
-                  : 'text-text-muted hover:text-text'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
-              YouTube Link
-            </button>
+        {/* Alternative Option */}
+        <div className="bg-surface border border-border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 text-text-secondary">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm">Already have a YouTube link?</span>
           </div>
-        )}
+          <Link href="/submit" className="text-sm font-medium text-garnet hover:text-garnet-dark transition-colors">
+            Submit YouTube URL instead &rarr;
+          </Link>
+        </div>
 
         {/* Error Alert */}
         {errorMessage && submitStatus === 'idle' && (
@@ -220,17 +165,16 @@ export default function SubmitPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-text mb-2">
-                {mode === 'upload' ? 'Video Uploaded!' : 'Video Submitted!'}
-              </h2>
+              <h2 className="text-xl font-semibold text-text mb-2">Video Uploaded!</h2>
               <p className="text-text-muted mb-6">
-                {mode === 'upload'
-                  ? "Your video has been added to the upload queue. It will appear in the archive once it's processed."
-                  : 'Redirecting to videos page...'}
+                Your video has been added to the upload queue. You&apos;ll be notified when it&apos;s live on YouTube.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button onClick={resetForm}>
-                  Submit Another
+                <Button onClick={() => {
+                  setSubmitStatus('idle');
+                  setErrorMessage('');
+                }}>
+                  Upload Another
                 </Button>
                 <Button variant="secondary" onClick={() => router.push('/videos')}>
                   Browse Videos
@@ -248,12 +192,17 @@ export default function SubmitPage() {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-error">
-                  {mode === 'upload' ? 'Upload failed' : 'Failed to submit video'}
-                </p>
+                <p className="font-medium text-error">Upload failed</p>
                 <p className="text-error/80 text-sm mt-1">{errorMessage || 'Please try again later.'}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={resetForm}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSubmitStatus('idle');
+                  setErrorMessage('');
+                }}
+              >
                 Try Again
               </Button>
             </div>
@@ -275,33 +224,23 @@ export default function SubmitPage() {
           </Card>
         )}
 
-        {/* Forms */}
-        {!isLoadingActs && submitStatus === 'idle' && (
+        {/* Form */}
+        {!isLoadingActs && submitStatus !== 'success' && (
           <Card variant="elevated">
             <CardContent className="p-6">
-              {mode === 'upload' ? (
-                <VideoUploadForm acts={acts} onSubmit={handleUploadSubmit} />
-              ) : (
-                <VideoSubmitForm acts={acts} onSubmit={handleYouTubeSubmit} />
-              )}
+              <VideoUploadForm acts={acts} onSubmit={handleSubmit} />
             </CardContent>
           </Card>
         )}
 
         {/* Help Text */}
-        {submitStatus === 'idle' && (
-          <div className="mt-6 text-center">
+        {submitStatus !== 'success' && (
+          <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-text-muted">
-              {mode === 'upload' ? (
-                <>Videos are uploaded to our YouTube channel and will appear in the archive once processed.</>
-              ) : (
-                <>
-                  Only YouTube videos are supported.{' '}
-                  <Link href="/about" className="text-garnet hover:text-garnet-dark transition-colors">
-                    Learn more
-                  </Link>
-                </>
-              )}
+              Videos are uploaded to our YouTube channel and will appear in the archive once processed.
+            </p>
+            <p className="text-xs text-text-light">
+              Max file size: 500MB. Supported formats: MP4, MOV, AVI, WebM, MKV
             </p>
           </div>
         )}

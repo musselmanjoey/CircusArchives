@@ -157,3 +157,45 @@ export interface ActRanking {
   topVideo: Video | null;
   totalVotes: number;
 }
+
+// V6: Upload Queue types
+export type UploadStatus = 'PENDING' | 'UPLOADED' | 'FAILED';
+
+export interface UploadQueueItem {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  blobUrl: string;
+  title: string;
+  year: number;
+  description?: string;
+  showType: ShowType;
+  actIds: string[];
+  performerIds: string[];
+  status: UploadStatus;
+  youtubeUrl?: string;
+  errorMessage?: string;
+  uploaderId: string;
+  uploader?: Performer;
+  createdAt: Date;
+  updatedAt: Date;
+  processedAt?: Date;
+}
+
+export interface UploadQueueCreateInput {
+  fileName: string;
+  fileSize: number;
+  blobUrl: string;
+  title: string;
+  year: number;
+  description?: string;
+  showType: ShowType;
+  actIds: string[];
+  performerIds?: string[];
+}
+
+export interface UploadQueueUpdateInput {
+  status?: UploadStatus;
+  youtubeUrl?: string;
+  errorMessage?: string;
+}
