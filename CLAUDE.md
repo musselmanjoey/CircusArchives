@@ -6,6 +6,7 @@ YouTube-based video archive for FSU Flying High Circus alumni.
 ```bash
 npm run dev              # Dev server (port 3000)
 npm run build            # Production build
+npm run queue:process    # Process upload queue (uses .env.production)
 npx playwright test      # E2E tests
 npx tsc --noEmit         # Type check
 npx prisma migrate dev   # Run migrations
@@ -18,6 +19,8 @@ npx prisma studio        # Visual DB browser
 - `src/lib/auth.ts` - NextAuth configuration
 - `prisma/schema.prisma` - Database schema (source of truth)
 - `src/types/index.ts` - TypeScript types
+- `scripts/process-upload-queue.ts` - Downloads from Vercel Blob, uploads to YouTube
+- `tools/youtube/scripts/upload.py` - Python YouTube upload script
 
 ## Conventions
 - Named exports: `export const ComponentName = () => {}`
@@ -33,7 +36,8 @@ npx prisma studio        # Visual DB browser
 - V3 ✅ Voting (one vote per act, performer 2x bonus, rankings homepage)
 - V4 ✅ Comments + Leaderboard + About/Support (140-char comments, act leaderboards, static pages)
 - V5 ✅ Multi-Act + Show Type + UI Overhaul (multi-act videos, Home/Callaway shows, FSU branding, mobile-responsive)
-- V6 Planned: OAuth + Email invites
+- V6 ✅ Video Upload System (client-side Vercel Blob upload, queue processing, YouTube upload via local script)
+- V7 Planned: OAuth + Email invites
 
 ## IMPORTANT
 - YouTube-only video hosting (firm constraint)

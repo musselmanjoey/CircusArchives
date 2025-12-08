@@ -47,7 +47,14 @@ Following the tornado that damaged the circus tent and caused a multi-year disru
 - Mobile-responsive design with hamburger menu
 - Chip-based multi-select for acts
 
-### V6+ - Future
+### V6 - Video Upload System ✅
+- Direct video upload from browser (mobile & desktop)
+- Client-side upload to Vercel Blob (up to 2GB files)
+- Upload queue with admin visibility
+- Local script processes queue and uploads to YouTube
+- iOS Safari compatible
+
+### V7+ - Future
 - Facebook/Google OAuth
 - Email invites and alumni verification
 
@@ -62,6 +69,7 @@ Following the tornado that damaged the circus tent and caused a multi-year disru
 | Styling | Tailwind CSS v4 |
 | Testing | Playwright (E2E) |
 | Hosting | Vercel + Railway |
+| Storage | Vercel Blob |
 
 ## Getting Started
 
@@ -93,6 +101,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 | `AUTH_SECRET` | Yes | NextAuth.js secret (generate with `openssl rand -base64 32`) |
 | `AUTH_TRUST_HOST` | Production | Set to `true` for production |
 | `NEXT_PUBLIC_APP_URL` | Optional | Public URL of the app |
+| `BLOB_READ_WRITE_TOKEN` | Yes | Vercel Blob storage token |
 
 ## Project Structure
 
@@ -130,6 +139,9 @@ npx playwright test
 
 # Open Prisma Studio
 npx prisma studio
+
+# Process upload queue (uploads queued videos to YouTube)
+npm run queue:process
 ```
 
 ## Documentation
