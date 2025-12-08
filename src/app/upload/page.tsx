@@ -55,58 +55,21 @@ export default function UploadPage() {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      console.log('[Upload] Step 1: Starting upload process');
+      console.log('[Upload] Starting upload - FormData already contains pre-converted Blob');
       setErrorMessage('');
       setSuccessMessage('');
       setUploadedImmediately(false);
       setYoutubeUrl(null);
 
-      // iOS Safari workaround: Convert File to Blob to avoid "string did not match expected pattern" error
-      console.log('[Upload] Step 2: Getting file from FormData');
-      const file = formData.get('file') as File | null;
-      console.log('[Upload] Step 2a: File exists:', !!file);
-
-      if (file) {
-        try {
-          console.log('[Upload] Step 3: Attempting to read file type');
-          const fileType = file.type;
-          console.log('[Upload] Step 3a: File type:', fileType);
-
-          console.log('[Upload] Step 4: Attempting to read file name');
-          const fileName = file.name;
-          console.log('[Upload] Step 4a: File name:', fileName);
-
-          console.log('[Upload] Step 5: Attempting to read file size');
-          const fileSize = file.size;
-          console.log('[Upload] Step 5a: File size:', fileSize);
-
-          console.log('[Upload] Step 6: Attempting arrayBuffer()');
-          const arrayBuffer = await file.arrayBuffer();
-          console.log('[Upload] Step 6a: ArrayBuffer size:', arrayBuffer.byteLength);
-
-          console.log('[Upload] Step 7: Creating Blob');
-          const blob = new Blob([arrayBuffer], { type: fileType || 'video/mp4' });
-          console.log('[Upload] Step 7a: Blob size:', blob.size);
-
-          console.log('[Upload] Step 8: Setting blob in FormData');
-          formData.set('file', blob, fileName || 'video.mp4');
-          console.log('[Upload] Step 8a: FormData updated');
-        } catch (blobError) {
-          console.error('[Upload] Blob conversion error at some step:', blobError);
-          // If blob conversion fails, try with original file
-        }
-      }
-
-      console.log('[Upload] Step 9: Starting fetch');
+      // Note: FormData now contains a pre-converted Blob from VideoUploadForm
+      // This is the iOS Safari fix - blob conversion happens at file selection time
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-      console.log('[Upload] Step 9a: Fetch completed, status:', response.status);
+      console.log('[Upload] Fetch completed, status:', response.status);
 
-      console.log('[Upload] Step 10: Parsing response JSON');
       const result: UploadResponse = await response.json();
-      console.log('[Upload] Step 10a: Response parsed');
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to upload video');
@@ -120,11 +83,7 @@ export default function UploadPage() {
         setYoutubeUrl(result.data.youtubeUrl);
       }
     } catch (error) {
-      console.error('[Upload] ERROR caught:', error);
-      console.error('[Upload] Error type:', typeof error);
-      console.error('[Upload] Error name:', error instanceof Error ? error.name : 'unknown');
-      console.error('[Upload] Error message:', error instanceof Error ? error.message : String(error));
-      console.error('[Upload] Error stack:', error instanceof Error ? error.stack : 'no stack');
+      console.error('[Upload] ERROR:', error);
       setSubmitStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Failed to upload video');
     }

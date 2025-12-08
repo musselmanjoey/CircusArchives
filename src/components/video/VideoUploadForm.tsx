@@ -14,6 +14,9 @@ export interface VideoUploadFormProps {
 
 export interface UploadFormData {
   file: File | null;
+  fileBlob: Blob | null;  // Pre-converted blob for iOS Safari compatibility
+  fileName: string;       // Store filename separately since Blob doesn't have .name
+  fileSize: number;       // Store size separately for display
   year: number;
   description: string;
   showType: ShowType;
@@ -58,6 +61,9 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof UploadFormData | 'actIds', string>>>({});
   const [formData, setFormData] = useState<UploadFormData>({
     file: null,
+    fileBlob: null,
+    fileName: '',
+    fileSize: 0,
     year: new Date().getFullYear(),
     description: '',
     showType: 'HOME',
@@ -101,7 +107,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
     }
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     try {
       const error = validateFile(file);
       if (error) {
@@ -109,10 +115,50 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
         return;
       }
 
+      // iOS Safari workaround: Immediately convert File to Blob and extract properties
+      // This avoids the "string did not match expected pattern" error that occurs
+      // when accessing File properties later during FormData.append()
+      let fileName = 'video.mp4';
+      let fileSize = 0;
+      let fileType = 'video/mp4';
+
+      try {
+        fileName = file.name || 'video.mp4';
+      } catch {
+        console.warn('Could not read file.name, using default');
+      }
+
+      try {
+        fileSize = file.size || 0;
+      } catch {
+        console.warn('Could not read file.size');
+      }
+
+      try {
+        fileType = file.type || 'video/mp4';
+      } catch {
+        console.warn('Could not read file.type, using default');
+      }
+
+      // Convert to Blob immediately - this is the key fix for iOS Safari
+      let blob: Blob;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        blob = new Blob([arrayBuffer], { type: fileType });
+        console.log('[FileSelect] Successfully converted to Blob:', blob.size, 'bytes');
+      } catch (blobErr) {
+        console.error('[FileSelect] Blob conversion failed:', blobErr);
+        // If blob conversion fails, still try to use the file directly
+        blob = file;
+      }
+
       setErrors({ ...errors, file: undefined });
       setFormData({
         ...formData,
         file,
+        fileBlob: blob,
+        fileName,
+        fileSize,
       });
     } catch (err) {
       console.error('File select error:', err);
@@ -158,7 +204,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof UploadFormData | 'actIds', string>> = {};
 
-    if (!formData.file) {
+    if (!formData.fileBlob) {
       newErrors.file = 'Please select a video file';
     }
 
@@ -192,23 +238,28 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!validate() || !formData.file) return;
+    if (!validate() || !formData.fileBlob) return;
 
     setIsSubmitting(true);
     setUploadProgress(0);
 
     try {
       const submitData = new FormData();
-      submitData.append('file', formData.file);
-      // Use filename (without extension) as title - use safe accessor for iOS
-      const fileName = safeFileName(formData.file);
-      const title = fileName.replace(/\.[^/.]+$/, '') || 'Untitled Video';
+
+      // iOS Safari fix: Use the pre-converted Blob with stored filename
+      // This avoids the "string did not match expected pattern" error
+      submitData.append('file', formData.fileBlob, formData.fileName || 'video.mp4');
+
+      // Use stored filename (without extension) as title
+      const title = formData.fileName.replace(/\.[^/.]+$/, '') || 'Untitled Video';
       submitData.append('title', title);
       submitData.append('year', formData.year.toString());
       submitData.append('showType', formData.showType);
       submitData.append('description', formData.description.trim());
       formData.actIds.forEach((id) => submitData.append('actIds', id));
       formData.performerIds.forEach((id) => submitData.append('performerIds', id));
+
+      console.log('[Submit] FormData created with blob size:', formData.fileBlob.size);
 
       // Simulate progress for better UX (actual progress would need XHR)
       const progressInterval = setInterval(() => {
@@ -225,7 +276,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   };
 
   const removeFile = () => {
-    setFormData({ ...formData, file: null });
+    setFormData({ ...formData, file: null, fileBlob: null, fileName: '', fileSize: 0 });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -239,7 +290,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
           Video File
         </label>
 
-        {!formData.file ? (
+        {!formData.fileBlob ? (
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -298,8 +349,8 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-text truncate">{safeFileName(formData.file)}</p>
-                <p className="text-sm text-text-muted">{safeFileSize(formData.file)}</p>
+                <p className="font-medium text-text truncate">{formData.fileName || 'Video file'}</p>
+                <p className="text-sm text-text-muted">{formData.fileSize > 0 ? formatFileSize(formData.fileSize) : ''}</p>
               </div>
 
               <button
@@ -432,7 +483,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
         <Button
           type="submit"
           size="lg"
-          disabled={isSubmitting || !formData.file}
+          disabled={isSubmitting || !formData.fileBlob}
           isLoading={isSubmitting}
           className="w-full"
         >
