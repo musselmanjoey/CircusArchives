@@ -1,10 +1,11 @@
 /**
- * YouTube Upload Stub for Production Builds
+ * YouTube Upload Stub (Production Build)
  *
- * This is an empty stub that replaces youtube-upload.ts in Vercel production builds
- * to avoid bundling Node.js fs/path/child_process modules which exceed size limits.
+ * This is a minimal stub that replaces youtube-upload.ts in production builds.
+ * It contains NO Node.js imports (fs, path, child_process) to avoid bundling issues.
  *
- * In production, videos are queued for manual processing and this module is never used.
+ * In production, videos are queued for manual processing and this code returns
+ * an error indicating the upload was queued instead.
  */
 
 import type { ShowType } from '@/types';
@@ -26,6 +27,7 @@ export async function uploadToYouTube(
   _description?: string | null,
   _performerNames?: string[]
 ): Promise<YouTubeUploadResult> {
+  // In production, videos are queued for manual processing
   return {
     success: false,
     error: 'YouTube upload not available in production - video queued for manual processing'
