@@ -38,7 +38,13 @@
       "Bash(findstr:*)",
       "Bash(npx prisma:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python tools/youtube/scripts/upload.py:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx prisma db execute:*)",
+      "Bash(set SKIP_YOUTUBE_UPLOAD=true)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx prisma migrate deploy:*)",
+      "Bash(npx vercel env add:*)",
+      "Bash(npx vercel:*)"
     ],
     "deny": [],
     "ask": []

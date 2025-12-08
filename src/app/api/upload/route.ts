@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { uploadFile, getLocalFilePath } from '@/lib/storage';
-import { uploadToYouTube } from '@/lib/youtube-upload';
+import { uploadFile } from '@/lib/storage';
 import type { ApiResponse, UploadQueueItem, ShowType } from '@/types';
 
-// Force Node.js runtime (not Edge) to allow child_process for YouTube upload
-export const runtime = 'nodejs';
+// Dynamic imports for local-dev-only modules to avoid bundling Node.js modules in production
+// These are only used when STORAGE_PROVIDER !== 'vercel-blob'
+const getLocalDevModules = async () => {
+  const { getLocalFilePath } = await import('@/lib/storage');
+  const { uploadToYouTube } = await import('@/lib/youtube-upload');
+  return { getLocalFilePath, uploadToYouTube };
+};
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB limit
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska'];
@@ -162,6 +166,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         });
         performerNames = performers.map(p => `${p.firstName} ${p.lastName}`);
       }
+
+      // Dynamic import local-dev-only modules
+      const { getLocalFilePath, uploadToYouTube } = await getLocalDevModules();
 
       // Get local file path
       const localPath = await getLocalFilePath(result.url);
