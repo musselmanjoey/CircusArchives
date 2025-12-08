@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     resolveAlias: {
       // Replace local-only modules with empty stubs in Vercel builds
       // to avoid bundling Node.js fs/path/child_process modules (500MB+)
-      '@/lib/storage/local': './src/lib/storage/local-stub.ts',
-      '@/lib/youtube-upload': './src/lib/youtube-upload-stub.ts',
+      '@/lib/storage/local': '@/lib/storage/local-stub',
+      '@/lib/youtube-upload': '@/lib/youtube-upload-stub',
     },
   } : {},
 };
