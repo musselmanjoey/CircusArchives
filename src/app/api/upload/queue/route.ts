@@ -104,6 +104,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }, { status: 201 });
   } catch (error) {
     console.error('Queue creation error:', error);
-    return NextResponse.json({ error: 'Failed to create queue entry' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: `Failed to create queue entry: ${errorMessage}` }, { status: 500 });
   }
 }
