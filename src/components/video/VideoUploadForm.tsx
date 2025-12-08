@@ -52,34 +52,55 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   }));
 
   const validateFile = (file: File): string | null => {
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`;
+    try {
+      // Access file properties - iOS Safari can throw errors here
+      const fileName = file.name || 'unknown';
+      const fileSize = file.size || 0;
+
+      const ext = '.' + fileName.split('.').pop()?.toLowerCase();
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`;
+      }
+      if (fileSize > MAX_FILE_SIZE) {
+        return `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`;
+      }
+      return null;
+    } catch (err) {
+      console.error('File validation error:', err);
+      return 'Error reading file. Please try selecting the file again.';
     }
-    if (file.size > MAX_FILE_SIZE) {
-      return `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`;
-    }
-    return null;
   };
 
   const handleFileSelect = (file: File) => {
-    const error = validateFile(file);
-    if (error) {
-      setErrors({ ...errors, file: error });
-      return;
-    }
+    try {
+      const error = validateFile(file);
+      if (error) {
+        setErrors({ ...errors, file: error });
+        return;
+      }
 
-    setErrors({ ...errors, file: undefined });
-    setFormData({
-      ...formData,
-      file,
-    });
+      setErrors({ ...errors, file: undefined });
+      setFormData({
+        ...formData,
+        file,
+      });
+    } catch (err) {
+      console.error('File select error:', err);
+      setErrors({ ...errors, file: 'Error processing file. Please try again.' });
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    } catch (err) {
+      // iOS Safari can throw "string did not match expected pattern" error
+      // when accessing file properties in certain conditions
+      console.error('File selection error:', err);
+      setErrors({ ...errors, file: 'Error selecting file. Please try again or use a different browser.' });
     }
   };
 
