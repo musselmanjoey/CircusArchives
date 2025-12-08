@@ -4,11 +4,11 @@ import { prisma } from '@/lib/db';
 import { uploadFile } from '@/lib/storage';
 import type { ApiResponse, UploadQueueItem, ShowType } from '@/types';
 
-// Dynamic imports for local-dev-only modules to avoid bundling Node.js modules in production
-// These are only used when STORAGE_PROVIDER !== 'vercel-blob'
+// Dynamic imports for local-dev-only modules
+// Using stub modules to avoid bundling Node.js modules in production
 const getLocalDevModules = async () => {
   const { getLocalFilePath } = await import('@/lib/storage');
-  const { uploadToYouTube } = await import('@/lib/youtube-upload');
+  const { uploadToYouTube } = await import('@/lib/youtube-upload-stub');
   return { getLocalFilePath, uploadToYouTube };
 };
 

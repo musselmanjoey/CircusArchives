@@ -22,9 +22,9 @@ export async function getStorageProvider(): Promise<StorageProvider> {
     return new VercelBlobStorage();
   }
 
-  // Local storage - only imported in non-Vercel environments
-  // This code path is not taken in production
-  const { LocalStorage } = await import('./local');
+  // Local storage - always use the stub to avoid bundling Node.js modules
+  // The stub will throw an error in production, which is expected
+  const { LocalStorage } = await import('./local-stub');
   return new LocalStorage();
 }
 

@@ -1,34 +1,31 @@
 /**
- * Local Storage Stub (Production Build)
+ * Local Storage Stub
  *
- * This is a minimal stub that replaces local.ts in production builds.
- * It contains NO Node.js imports (fs, path) to avoid bundling issues.
+ * Contains NO Node.js imports (fs, path) to prevent bundling issues.
+ * Always throws errors - local storage is only for development.
  *
- * In production, Vercel Blob is used and this code should never be reached.
- * If it is reached, an error is thrown to indicate misconfiguration.
+ * For local development, set STORAGE_PROVIDER to empty or don't set it,
+ * and use a separate local file server if needed.
  */
 
 import type { StorageProvider, StorageResult } from './index';
 
-const PRODUCTION_ERROR = 'LocalStorage is not available in production. Use Vercel Blob (STORAGE_PROVIDER=vercel-blob).';
+const ERROR_MSG = 'LocalStorage is not available. Set STORAGE_PROVIDER=vercel-blob for production.';
 
 export class LocalStorage implements StorageProvider {
-  private baseUrl: string;
-
   constructor() {
-    this.baseUrl = '/api/files';
-    // Don't throw in constructor - class might be instantiated for type checking
+    // Constructor doesn't throw to allow type checking
   }
 
   async upload(_file: File, _pathname: string): Promise<StorageResult> {
-    throw new Error(PRODUCTION_ERROR);
+    throw new Error(ERROR_MSG);
   }
 
   async delete(_url: string): Promise<void> {
-    throw new Error(PRODUCTION_ERROR);
+    throw new Error(ERROR_MSG);
   }
 
   getPublicUrl(_pathname: string): string {
-    throw new Error(PRODUCTION_ERROR);
+    throw new Error(ERROR_MSG);
   }
 }
