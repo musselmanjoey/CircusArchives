@@ -6,18 +6,18 @@
  *
  * Test Mode: Set SKIP_YOUTUBE_UPLOAD=true to mock uploads for testing.
  * This will return a fake YouTube URL without actually uploading.
+ *
+ * NOTE: This module uses dynamic imports to avoid bundling Node.js modules
+ * (fs, path, child_process) in production Vercel builds.
  */
 
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs';
 import type { ShowType } from '@/types';
-
-const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
-const UPLOAD_SCRIPT_PATH = path.join(process.cwd(), 'tools', 'youtube', 'scripts', 'upload.py');
 
 // Test mode flag - when true, skips actual YouTube upload and returns mock data
 const TEST_MODE = process.env.SKIP_YOUTUBE_UPLOAD === 'true';
+
+// Check if we're in production (Vercel Blob storage)
+const isProduction = () => process.env.STORAGE_PROVIDER === 'vercel-blob';
 
 export interface YouTubeUploadResult {
   success: boolean;
@@ -40,12 +40,20 @@ export async function uploadToYouTube(
   performerNames?: string[]
 ): Promise<YouTubeUploadResult> {
   // Only run in local dev (when STORAGE_PROVIDER is not vercel-blob)
-  if (process.env.STORAGE_PROVIDER === 'vercel-blob') {
+  if (isProduction()) {
     return {
       success: false,
       error: 'YouTube upload not available in production - video queued for manual processing'
     };
   }
+
+  // Dynamic imports to avoid bundling in production
+  const fs = await import('fs');
+  const path = await import('path');
+  const { spawn } = await import('child_process');
+
+  const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
+  const UPLOAD_SCRIPT_PATH = path.join(process.cwd(), 'tools', 'youtube', 'scripts', 'upload.py');
 
   // Test mode - return mock success without actually uploading
   if (TEST_MODE) {
@@ -123,19 +131,19 @@ export async function uploadToYouTube(
     let stdout = '';
     let stderr = '';
 
-    proc.stdout.on('data', (data) => {
+    proc.stdout.on('data', (data: Buffer) => {
       const text = data.toString();
       stdout += text;
       console.log(`[YouTube] ${text.trim()}`);
     });
 
-    proc.stderr.on('data', (data) => {
+    proc.stderr.on('data', (data: Buffer) => {
       const text = data.toString();
       stderr += text;
       console.error(`[YouTube Error] ${text.trim()}`);
     });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code: number | null) => {
       if (code === 0) {
         // Parse video ID from output
         // The script outputs: "Video ID: VIDEO_ID" and "URL: https://www.youtube.com/watch?v=VIDEO_ID"
@@ -163,7 +171,7 @@ export async function uploadToYouTube(
       }
     });
 
-    proc.on('error', (err) => {
+    proc.on('error', (err: Error) => {
       resolve({
         success: false,
         error: `Failed to start upload process: ${err.message}`

@@ -12,15 +12,18 @@ export interface StorageProvider {
   getPublicUrl(pathname: string): string;
 }
 
+// Check if we're using Vercel Blob (production) - checked at runtime
+const isVercelBlob = () => process.env.STORAGE_PROVIDER === 'vercel-blob';
+
 // Export the active provider based on config
 export async function getStorageProvider(): Promise<StorageProvider> {
-  const provider = process.env.STORAGE_PROVIDER || 'local';
-
-  if (provider === 'vercel-blob') {
+  if (isVercelBlob()) {
     const { VercelBlobStorage } = await import('./vercel-blob');
     return new VercelBlobStorage();
   }
 
+  // Local storage - only imported in non-Vercel environments
+  // This code path is not taken in production
   const { LocalStorage } = await import('./local');
   return new LocalStorage();
 }
@@ -38,10 +41,17 @@ export async function deleteFile(url: string): Promise<void> {
 
 /**
  * Get the local filesystem path for a stored file
- * Only works with local storage provider
+ * Only works with local storage provider - will throw in production
  */
-export function getLocalFilePath(blobUrl: string): string {
-  const baseDir = process.env.LOCAL_STORAGE_PATH || require('path').join(process.cwd(), 'uploads');
+export async function getLocalFilePath(blobUrl: string): Promise<string> {
+  if (isVercelBlob()) {
+    throw new Error('getLocalFilePath is not available with Vercel Blob storage');
+  }
+
+  // Dynamic import to avoid bundling path module in production
+  const path = await import('path');
+
+  const baseDir = process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), 'uploads');
   const baseUrl = process.env.LOCAL_STORAGE_URL || '/api/files';
 
   // Extract pathname from URL (e.g., /api/files/uploads/userId/file.mp4 -> uploads/userId/file.mp4)
@@ -52,5 +62,5 @@ export function getLocalFilePath(blobUrl: string): string {
     return `${baseDir}\\${pathname.replace(/\//g, '\\')}`;
   }
 
-  return require('path').join(baseDir, pathname);
+  return path.join(baseDir, pathname);
 }

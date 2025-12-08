@@ -164,7 +164,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       // Get local file path
-      const localPath = getLocalFilePath(result.url);
+      const localPath = await getLocalFilePath(result.url);
 
       console.log(`[Upload API] Attempting immediate YouTube upload...`);
       console.log(`[Upload API] File path: ${localPath}`);
