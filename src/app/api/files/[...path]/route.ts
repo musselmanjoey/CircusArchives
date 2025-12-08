@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, stat } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
 
-// Only enable this route for local storage
+// Only enable this route for local storage - in production with Vercel Blob, files are served directly
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
-const LOCAL_STORAGE_PATH = process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), 'uploads');
+
+// Early exit for production - don't import fs modules at all
+const isProduction = STORAGE_PROVIDER === 'vercel-blob';
 
 // MIME types for video files
 const MIME_TYPES: Record<string, string> = {
@@ -22,18 +21,25 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ): Promise<NextResponse> {
-  // Only serve files in local storage mode
-  if (STORAGE_PROVIDER !== 'local') {
-    return NextResponse.json({ error: 'File serving disabled' }, { status: 404 });
+  // Only serve files in local storage mode - early return for production
+  if (isProduction || STORAGE_PROVIDER !== 'local') {
+    return NextResponse.json({ error: 'File serving disabled in production' }, { status: 404 });
   }
+
+  // Dynamic imports to avoid bundling fs modules in production
+  const { readFile, stat } = await import('fs/promises');
+  const { existsSync } = await import('fs');
+  const pathModule = await import('path');
+
+  const LOCAL_STORAGE_PATH = process.env.LOCAL_STORAGE_PATH || pathModule.join(process.cwd(), 'uploads');
 
   try {
     const { path: pathSegments } = await context.params;
-    const filePath = path.join(LOCAL_STORAGE_PATH, ...pathSegments);
+    const filePath = pathModule.join(LOCAL_STORAGE_PATH, ...pathSegments);
 
     // Security: Ensure the resolved path is within the storage directory
-    const resolvedPath = path.resolve(filePath);
-    const resolvedBase = path.resolve(LOCAL_STORAGE_PATH);
+    const resolvedPath = pathModule.resolve(filePath);
+    const resolvedBase = pathModule.resolve(LOCAL_STORAGE_PATH);
 
     if (!resolvedPath.startsWith(resolvedBase)) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 403 });
@@ -44,7 +50,7 @@ export async function GET(
     }
 
     const stats = await stat(resolvedPath);
-    const ext = path.extname(resolvedPath).toLowerCase();
+    const ext = pathModule.extname(resolvedPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
     // Support range requests for video streaming
@@ -89,7 +95,7 @@ export async function GET(
         'Content-Type': contentType,
         'Content-Length': stats.size.toString(),
         'Accept-Ranges': 'bytes',
-        'Content-Disposition': `inline; filename="${path.basename(resolvedPath)}"`,
+        'Content-Disposition': `inline; filename="${pathModule.basename(resolvedPath)}"`,
       },
     });
   } catch (error) {
