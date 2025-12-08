@@ -144,24 +144,33 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
         return;
       }
 
-      // Convert to Blob immediately - this is the key fix for iOS Safari
-      let blob: Blob;
+      // Convert to Blob using FileReader (better iOS compatibility than arrayBuffer)
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        blob = new Blob([arrayBuffer], { type: fileType });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (reader.result instanceof ArrayBuffer) {
+              resolve(new Blob([reader.result], { type: fileType }));
+            } else {
+              reject(new Error('FileReader did not return ArrayBuffer'));
+            }
+          };
+          reader.onerror = () => reject(reader.error || new Error('FileReader error'));
+          reader.readAsArrayBuffer(file);
+        });
+
+        setErrors({ ...errors, file: undefined });
+        setFormData({
+          ...formData,
+          file,
+          fileBlob: blob,
+          fileName,
+          fileSize,
+        });
       } catch (blobErr) {
-        setErrors({ ...errors, file: `Step 4 failed (arrayBuffer/Blob): ${blobErr instanceof Error ? blobErr.message : String(blobErr)}` });
+        setErrors({ ...errors, file: `Step 4 failed (FileReader): ${blobErr instanceof Error ? blobErr.message : String(blobErr)}` });
         return;
       }
-
-      setErrors({ ...errors, file: undefined });
-      setFormData({
-        ...formData,
-        file,
-        fileBlob: blob,
-        fileName,
-        fileSize,
-      });
     } catch (err) {
       setErrors({ ...errors, file: `Unexpected error: ${err instanceof Error ? err.message : String(err)}` });
     }
@@ -169,14 +178,26 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     try {
-      const file = e.target.files?.[0];
+      // iOS Safari workaround: Access files list very carefully
+      const input = e.target;
+      if (!input) {
+        setErrors({ ...errors, file: 'Error: No input target' });
+        return;
+      }
+
+      const files = input.files;
+      if (!files || files.length === 0) {
+        return; // No file selected, not an error
+      }
+
+      const file = files[0];
       if (file) {
         handleFileSelect(file);
       }
     } catch (err) {
       // iOS Safari can throw "string did not match expected pattern" error
       // Show the actual error message so we can debug on iOS
-      setErrors({ ...errors, file: `File change error: ${err instanceof Error ? err.message : String(err)}` });
+      setErrors({ ...errors, file: `File input error: ${err instanceof Error ? err.message : String(err)}` });
     }
   };
 
