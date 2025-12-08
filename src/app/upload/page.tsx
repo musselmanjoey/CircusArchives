@@ -8,15 +8,7 @@ import { VideoUploadForm } from '@/components/video/VideoUploadForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { SelectOption } from '@/components/ui/Select';
-import type { Act, ApiResponse, UploadQueueItem } from '@/types';
-
-interface UploadResponse {
-  data?: UploadQueueItem;
-  error?: string;
-  message?: string;
-  uploadedImmediately?: boolean;
-  dailyUploadsRemaining?: number;
-}
+import type { Act, ApiResponse } from '@/types';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -26,8 +18,6 @@ export default function UploadPage() {
   const [isLoadingActs, setIsLoadingActs] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [uploadedImmediately, setUploadedImmediately] = useState(false);
-  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchActs = async () => {
@@ -53,57 +43,15 @@ export default function UploadPage() {
     fetchActs();
   }, []);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSuccess = (message: string) => {
+    setSubmitStatus('success');
+    setSuccessMessage(message);
     setErrorMessage('');
-    setSuccessMessage('');
-    setUploadedImmediately(false);
-    setYoutubeUrl(null);
+  };
 
-    try {
-      // Debug: Log FormData contents
-      const file = formData.get('file');
-      if (!file) {
-        throw new Error('Step A: No file in FormData');
-      }
-      if (file instanceof Blob) {
-        // This should work - we have a Blob
-      } else {
-        throw new Error(`Step A: File is not a Blob, got ${typeof file}`);
-      }
-    } catch (e) {
-      setSubmitStatus('error');
-      setErrorMessage(`FormData check failed: ${e instanceof Error ? e.message : String(e)}`);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      let result: UploadResponse;
-      try {
-        result = await response.json();
-      } catch (jsonErr) {
-        throw new Error(`Step B: Failed to parse response JSON: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to upload video');
-      }
-
-      // Set success state with message from API
-      setSubmitStatus('success');
-      setSuccessMessage(result.message || 'Video uploaded successfully!');
-      setUploadedImmediately(result.uploadedImmediately || false);
-      if (result.data?.youtubeUrl) {
-        setYoutubeUrl(result.data.youtubeUrl);
-      }
-    } catch (error) {
-      setSubmitStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : `Upload failed: ${String(error)}`);
-    }
+  const handleError = (error: string) => {
+    setSubmitStatus('error');
+    setErrorMessage(error);
   };
 
   // Loading state
@@ -203,45 +151,22 @@ export default function UploadPage() {
         {submitStatus === 'success' && (
           <Card variant="elevated" className="text-center">
             <CardContent className="p-8">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                uploadedImmediately ? 'bg-success-light' : 'bg-gold/20'
-              }`}>
-                {uploadedImmediately ? (
-                  <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-8 h-8 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-gold/20">
+                <svg className="w-8 h-8 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
               <h2 className="text-xl font-semibold text-text mb-2">
-                {uploadedImmediately ? 'Video Live on YouTube!' : 'Video Queued!'}
+                Video Queued!
               </h2>
               <p className="text-text-muted mb-4">
                 {successMessage}
               </p>
-              {youtubeUrl && (
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-garnet hover:text-garnet-dark font-medium mb-6"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                  Watch on YouTube
-                </a>
-              )}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={() => {
                   setSubmitStatus('idle');
                   setErrorMessage('');
                   setSuccessMessage('');
-                  setUploadedImmediately(false);
-                  setYoutubeUrl(null);
                 }}>
                   Upload Another
                 </Button>
@@ -297,7 +222,7 @@ export default function UploadPage() {
         {!isLoadingActs && submitStatus !== 'success' && (
           <Card variant="elevated">
             <CardContent className="p-6">
-              <VideoUploadForm acts={acts} onSubmit={handleSubmit} />
+              <VideoUploadForm acts={acts} onSuccess={handleSuccess} onError={handleError} />
             </CardContent>
           </Card>
         )}
@@ -309,7 +234,7 @@ export default function UploadPage() {
               Videos are uploaded to our YouTube channel and will appear in the archive once processed.
             </p>
             <p className="text-xs text-text-light">
-              Max file size: 500MB. Supported formats: MP4, MOV, AVI, WebM, MKV
+              Max file size: 2GB. Supported formats: MP4, MOV, AVI, WebM, MKV
             </p>
           </div>
         )}

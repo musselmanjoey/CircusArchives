@@ -9,7 +9,7 @@ import { VideoUploadForm } from '@/components/video/VideoUploadForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { SelectOption } from '@/components/ui/Select';
-import type { Act, ApiResponse, UploadQueueItem } from '@/types';
+import type { Act, ApiResponse } from '@/types';
 
 type SubmitMode = 'upload' | 'youtube';
 
@@ -72,26 +72,15 @@ export default function SubmitPage() {
     }
   };
 
-  // Handle file upload
-  const handleUploadSubmit = async (formData: FormData) => {
-    try {
-      setErrorMessage('');
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+  // Handle file upload success/error callbacks
+  const handleUploadSuccess = (message: string) => {
+    setErrorMessage('');
+    setSubmitStatus('success');
+  };
 
-      const result: ApiResponse<UploadQueueItem> = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to upload video');
-      }
-
-      setSubmitStatus('success');
-    } catch (error) {
-      setSubmitStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to upload video');
-    }
+  const handleUploadError = (error: string) => {
+    setSubmitStatus('error');
+    setErrorMessage(error);
   };
 
   const resetForm = () => {
@@ -280,7 +269,7 @@ export default function SubmitPage() {
           <Card variant="elevated">
             <CardContent className="p-6">
               {mode === 'upload' ? (
-                <VideoUploadForm acts={acts} onSubmit={handleUploadSubmit} />
+                <VideoUploadForm acts={acts} onSuccess={handleUploadSuccess} onError={handleUploadError} />
               ) : (
                 <VideoSubmitForm acts={acts} onSubmit={handleYouTubeSubmit} />
               )}
