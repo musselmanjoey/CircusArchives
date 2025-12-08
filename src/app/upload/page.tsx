@@ -54,22 +54,40 @@ export default function UploadPage() {
   }, []);
 
   const handleSubmit = async (formData: FormData) => {
-    try {
-      console.log('[Upload] Starting upload - FormData already contains pre-converted Blob');
-      setErrorMessage('');
-      setSuccessMessage('');
-      setUploadedImmediately(false);
-      setYoutubeUrl(null);
+    setErrorMessage('');
+    setSuccessMessage('');
+    setUploadedImmediately(false);
+    setYoutubeUrl(null);
 
-      // Note: FormData now contains a pre-converted Blob from VideoUploadForm
-      // This is the iOS Safari fix - blob conversion happens at file selection time
+    try {
+      // Debug: Log FormData contents
+      const file = formData.get('file');
+      if (!file) {
+        throw new Error('Step A: No file in FormData');
+      }
+      if (file instanceof Blob) {
+        // This should work - we have a Blob
+      } else {
+        throw new Error(`Step A: File is not a Blob, got ${typeof file}`);
+      }
+    } catch (e) {
+      setSubmitStatus('error');
+      setErrorMessage(`FormData check failed: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+
+    try {
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-      console.log('[Upload] Fetch completed, status:', response.status);
 
-      const result: UploadResponse = await response.json();
+      let result: UploadResponse;
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        throw new Error(`Step B: Failed to parse response JSON: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`);
+      }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to upload video');
@@ -83,9 +101,8 @@ export default function UploadPage() {
         setYoutubeUrl(result.data.youtubeUrl);
       }
     } catch (error) {
-      console.error('[Upload] ERROR:', error);
       setSubmitStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to upload video');
+      setErrorMessage(error instanceof Error ? error.message : `Upload failed: ${String(error)}`);
     }
   };
 

@@ -264,12 +264,20 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
     setIsSubmitting(true);
     setUploadProgress(0);
 
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
+
     try {
       const submitData = new FormData();
 
       // iOS Safari fix: Use the pre-converted Blob with stored filename
       // This avoids the "string did not match expected pattern" error
-      submitData.append('file', formData.fileBlob, formData.fileName || 'video.mp4');
+      try {
+        submitData.append('file', formData.fileBlob, formData.fileName || 'video.mp4');
+      } catch (appendErr) {
+        setErrors({ ...errors, file: `FormData.append failed: ${appendErr instanceof Error ? appendErr.message : String(appendErr)}` });
+        setIsSubmitting(false);
+        return;
+      }
 
       // Use stored filename (without extension) as title
       const title = formData.fileName.replace(/\.[^/.]+$/, '') || 'Untitled Video';
@@ -280,17 +288,18 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
       formData.actIds.forEach((id) => submitData.append('actIds', id));
       formData.performerIds.forEach((id) => submitData.append('performerIds', id));
 
-      console.log('[Submit] FormData created with blob size:', formData.fileBlob.size);
-
       // Simulate progress for better UX (actual progress would need XHR)
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 500);
 
       await onSubmit(submitData);
 
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
       setUploadProgress(100);
+    } catch (submitErr) {
+      if (progressInterval) clearInterval(progressInterval);
+      setErrors({ ...errors, file: `Submit error: ${submitErr instanceof Error ? submitErr.message : String(submitErr)}` });
     } finally {
       setIsSubmitting(false);
     }
