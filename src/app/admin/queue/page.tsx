@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { formatDate, formatFileSize } from '@/lib/utils';
+import { formatDateTime, formatFileSize } from '@/lib/utils';
 import type { ApiResponse, UploadQueueItem, UploadStatus } from '@/types';
 
 type FilterStatus = 'ALL' | UploadStatus;
@@ -360,15 +360,27 @@ export default function AdminQueuePage() {
                           <span className="text-text-muted">Size:</span>
                           <span className="ml-2 text-text">{formatFileSize(item.fileSize)}</span>
                         </div>
-                        <div>
+                        <div className="col-span-2 sm:col-span-1">
                           <span className="text-text-muted">Uploaded:</span>
-                          <span className="ml-2 text-text">{formatDate(item.createdAt)}</span>
+                          <span className="ml-2 text-text">{formatDateTime(item.createdAt)}</span>
                         </div>
                       </div>
 
                       {item.uploader && (
                         <p className="text-sm text-text-secondary mt-2">
                           By: {item.uploader.firstName} {item.uploader.lastName}
+                        </p>
+                      )}
+
+                      {item.description && (
+                        <p className="text-sm text-text-muted mt-2 italic">
+                          &quot;{item.description}&quot;
+                        </p>
+                      )}
+
+                      {item.performerIds && item.performerIds.length > 0 && (
+                        <p className="text-sm text-text-secondary mt-2">
+                          Performers tagged: {item.performerIds.length}
                         </p>
                       )}
 

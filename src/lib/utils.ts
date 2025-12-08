@@ -50,3 +50,19 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
+
+/**
+ * Format a date with time in EST timezone
+ */
+export function formatDateTime(date: Date | string): string {
+  const d = new Date(date);
+  return d.toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }) + ' EST';
+}
