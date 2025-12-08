@@ -42,16 +42,17 @@ export async function deleteFile(url: string): Promise<void> {
 /**
  * Get the local filesystem path for a stored file
  * Only works with local storage provider - will throw in production
+ *
+ * NOTE: This function is intentionally simple and doesn't use Node.js path module
+ * to avoid bundling issues. It uses string manipulation for path joining.
  */
 export async function getLocalFilePath(blobUrl: string): Promise<string> {
-  if (isVercelBlob()) {
-    throw new Error('getLocalFilePath is not available with Vercel Blob storage');
+  // Always throw in production - this function is only for local dev
+  if (isVercelBlob() || process.env.VERCEL === '1') {
+    throw new Error('getLocalFilePath is not available in production');
   }
 
-  // Dynamic import to avoid bundling path module in production
-  const path = await import('path');
-
-  const baseDir = process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), 'uploads');
+  const baseDir = process.env.LOCAL_STORAGE_PATH || `${process.cwd()}/uploads`;
   const baseUrl = process.env.LOCAL_STORAGE_URL || '/api/files';
 
   // Extract pathname from URL (e.g., /api/files/uploads/userId/file.mp4 -> uploads/userId/file.mp4)
@@ -62,5 +63,8 @@ export async function getLocalFilePath(blobUrl: string): Promise<string> {
     return `${baseDir}\\${pathname.replace(/\//g, '\\')}`;
   }
 
-  return path.join(baseDir, pathname);
+  // Simple path join using string concatenation
+  const cleanBase = baseDir.replace(/[\/\\]$/, '');
+  const cleanPath = pathname.replace(/^[\/\\]/, '');
+  return `${cleanBase}/${cleanPath}`;
 }
