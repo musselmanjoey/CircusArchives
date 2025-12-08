@@ -7,20 +7,15 @@ const nextConfig: NextConfig = {
   // Externalize Node.js modules to prevent bundling in serverless functions
   serverExternalPackages: ['fs', 'path', 'child_process'],
 
-  webpack: (config, { isServer }) => {
-    // In Vercel production builds, replace local storage and youtube-upload
-    // modules with empty stubs to avoid bundling Node.js modules (500MB+)
-    if (isServer && isVercelBuild) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        // Replace local storage module with an empty module
-        '@/lib/storage/local': false,
-        // Replace youtube-upload with an empty module
-        '@/lib/youtube-upload': false,
-      };
-    }
-    return config;
-  },
+  // Turbopack configuration for Next.js 16+
+  turbopack: isVercelBuild ? {
+    resolveAlias: {
+      // Replace local-only modules with empty stubs in Vercel builds
+      // to avoid bundling Node.js fs/path/child_process modules (500MB+)
+      '@/lib/storage/local': './src/lib/storage/local-stub.ts',
+      '@/lib/youtube-upload': './src/lib/youtube-upload-stub.ts',
+    },
+  } : {},
 };
 
 export default nextConfig;
