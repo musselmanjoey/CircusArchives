@@ -208,7 +208,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*,.mp4,.mov,.avi,.webm,.mkv"
+              accept="video/*"
               onChange={handleFileChange}
               className="hidden"
             />

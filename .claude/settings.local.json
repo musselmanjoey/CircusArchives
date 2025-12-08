@@ -44,7 +44,8 @@
       "Bash(set SKIP_YOUTUBE_UPLOAD=true)",
       "Bash(DATABASE_URL=\"postgresql://postgres:***REDACTED***@shinkansen.proxy.rlwy.net:16369/railway\" npx prisma migrate deploy:*)",
       "Bash(npx vercel env add:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "WebFetch(domain:flyinghighcircusarchives.com)"
     ],
     "deny": [],
     "ask": []
