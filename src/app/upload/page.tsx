@@ -60,6 +60,21 @@ export default function UploadPage() {
       setUploadedImmediately(false);
       setYoutubeUrl(null);
 
+      // iOS Safari workaround: Convert File to Blob to avoid "string did not match expected pattern" error
+      // This error occurs when Safari tries to read certain video file metadata during fetch
+      const file = formData.get('file') as File | null;
+      if (file) {
+        try {
+          // Read file as ArrayBuffer and create a new Blob
+          const arrayBuffer = await file.arrayBuffer();
+          const blob = new Blob([arrayBuffer], { type: file.type || 'video/mp4' });
+          formData.set('file', blob, file.name || 'video.mp4');
+        } catch (blobError) {
+          console.error('Blob conversion error:', blobError);
+          // If blob conversion fails, try with original file
+        }
+      }
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
