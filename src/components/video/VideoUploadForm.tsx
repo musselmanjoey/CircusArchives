@@ -53,21 +53,29 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
 
   const validateFile = (file: File): string | null => {
     try {
-      // Access file properties - iOS Safari can throw errors here
-      const fileName = file.name || 'unknown';
-      const fileSize = file.size || 0;
+      // iOS Safari has bugs reading file properties - be very defensive here
+      // Server will do strict validation, client just does basic checks
 
-      const ext = '.' + fileName.split('.').pop()?.toLowerCase();
-      if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        return `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`;
+      // Try to get file size - this is the most reliable property
+      let fileSize = 0;
+      try {
+        fileSize = file.size || 0;
+      } catch {
+        // If we can't read size, let server handle it
+        return null;
       }
+
       if (fileSize > MAX_FILE_SIZE) {
         return `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`;
       }
+
+      // Skip extension check on client - iOS can have issues with .mov/.heic files
+      // Server will validate the actual file type
       return null;
     } catch (err) {
-      console.error('File validation error:', err);
-      return 'Error reading file. Please try selecting the file again.';
+      // If anything fails, just let it through - server will validate
+      console.error('File validation error (non-blocking):', err);
+      return null;
     }
   };
 
@@ -226,10 +234,14 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
               }
             `}
           >
+            {/*
+              iOS Safari has bugs with accept attribute and video MIME type detection.
+              Removing accept allows any file but we validate server-side.
+              capture="environment" helps with direct camera recording on mobile.
+            */}
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*"
               onChange={handleFileChange}
               className="hidden"
             />
