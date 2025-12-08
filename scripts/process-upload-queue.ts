@@ -4,9 +4,11 @@
  * Processes pending video uploads from the queue by:
  * 1. Checking daily YouTube upload limit (default: 10)
  * 2. Getting pending items from the queue
- * 3. Calling the Python upload script for each video
- * 4. Creating video entries in the database
- * 5. Updating queue status
+ * 3. Downloading video from Vercel Blob to temp file
+ * 4. Calling the Python upload script for each video
+ * 5. Creating video entries in the database
+ * 6. Updating queue status
+ * 7. Cleaning up temp files
  *
  * Run with: npx tsx scripts/process-upload-queue.ts
  * Or schedule via Windows Task Scheduler / cron
@@ -16,6 +18,8 @@ import { PrismaClient, ShowType, UploadStatus } from '@prisma/client';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import https from 'https';
 
 const prisma = new PrismaClient();
 
@@ -24,8 +28,8 @@ const DAILY_UPLOAD_LIMIT = parseInt(process.env.DAILY_UPLOAD_LIMIT || '10', 10);
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
 const UPLOAD_SCRIPT_PATH = path.join(__dirname, '..', 'tools', 'youtube', 'scripts', 'upload.py');
 
-// For local dev, videos are stored here
-const LOCAL_STORAGE_PATH = process.env.LOCAL_STORAGE_PATH || 'Z:\\Share\\CircusArchives\\Imports';
+// Temp directory for downloaded videos
+const TEMP_DIR = path.join(os.tmpdir(), 'circus-archives-uploads');
 
 interface UploadResult {
   success: boolean;
@@ -69,13 +73,85 @@ async function incrementDailyUploadCount(): Promise<void> {
 }
 
 /**
- * Get the local file path for a queue item
+ * Download a video from Vercel Blob to a local temp file
  */
-function getLocalFilePath(blobUrl: string): string {
-  // blobUrl format: /api/files/uploads/{userId}/{timestamp}-{filename}
-  // Extract the path after /api/files/
-  const relativePath = blobUrl.replace('/api/files/', '');
-  return path.join(LOCAL_STORAGE_PATH, relativePath);
+async function downloadFromBlob(blobUrl: string, fileName: string): Promise<string> {
+  // Ensure temp directory exists
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+  }
+
+  const localPath = path.join(TEMP_DIR, `${Date.now()}-${fileName}`);
+
+  console.log(`Downloading from: ${blobUrl}`);
+  console.log(`Saving to: ${localPath}`);
+
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(localPath);
+
+    https.get(blobUrl, (response) => {
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        // Handle redirect
+        const redirectUrl = response.headers.location;
+        if (redirectUrl) {
+          https.get(redirectUrl, (redirectResponse) => {
+            redirectResponse.pipe(file);
+            file.on('finish', () => {
+              file.close();
+              resolve(localPath);
+            });
+          }).on('error', (err) => {
+            fs.unlink(localPath, () => {});
+            reject(err);
+          });
+        } else {
+          reject(new Error('Redirect without location header'));
+        }
+        return;
+      }
+
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
+        return;
+      }
+
+      const totalSize = parseInt(response.headers['content-length'] || '0', 10);
+      let downloadedSize = 0;
+
+      response.on('data', (chunk) => {
+        downloadedSize += chunk.length;
+        if (totalSize > 0) {
+          const percent = Math.round((downloadedSize / totalSize) * 100);
+          process.stdout.write(`\rDownloading: ${percent}%`);
+        }
+      });
+
+      response.pipe(file);
+
+      file.on('finish', () => {
+        file.close();
+        console.log('\nDownload complete!');
+        resolve(localPath);
+      });
+    }).on('error', (err) => {
+      fs.unlink(localPath, () => {});
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Clean up a temp file
+ */
+function cleanupTempFile(filePath: string): void {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`Cleaned up temp file: ${filePath}`);
+    }
+  } catch (err) {
+    console.warn(`Failed to clean up temp file: ${filePath}`, err);
+  }
 }
 
 /**
@@ -285,52 +361,71 @@ async function processQueue(): Promise<void> {
     console.log(`Processing: ${item.title}`);
     console.log(`Uploaded by: ${item.uploader.firstName} ${item.uploader.lastName}`);
 
-    const filePath = getLocalFilePath(item.blobUrl);
-    const actNames = item.actIds.map(id => actNameMap.get(id) || 'Unknown').filter(Boolean);
+    let localFilePath: string | null = null;
 
-    const result = await uploadToYouTube(
-      filePath,
-      item.title,
-      item.year,
-      item.showType,
-      actNames
-    );
+    try {
+      // Download from Vercel Blob to local temp file
+      localFilePath = await downloadFromBlob(item.blobUrl, item.fileName);
+      const actNames = item.actIds.map(id => actNameMap.get(id) || 'Unknown').filter(Boolean);
 
-    if (result.success && result.youtubeUrl && result.videoId) {
-      // Update queue item
-      await prisma.uploadQueue.update({
-        where: { id: item.id },
-        data: {
-          status: UploadStatus.UPLOADED,
-          youtubeUrl: result.youtubeUrl,
-          processedAt: new Date()
-        }
-      });
+      const result = await uploadToYouTube(
+        localFilePath,
+        item.title,
+        item.year,
+        item.showType,
+        actNames
+      );
 
-      // Create video entry
-      await createVideoEntry(item, result.youtubeUrl, result.videoId);
+      if (result.success && result.youtubeUrl && result.videoId) {
+        // Update queue item
+        await prisma.uploadQueue.update({
+          where: { id: item.id },
+          data: {
+            status: UploadStatus.UPLOADED,
+            youtubeUrl: result.youtubeUrl,
+            processedAt: new Date()
+          }
+        });
 
-      // Increment daily count
-      await incrementDailyUploadCount();
+        // Create video entry
+        await createVideoEntry(item, result.youtubeUrl, result.videoId);
 
-      // Optionally delete the local file after successful upload
-      // Uncomment if you want to clean up:
-      // try { fs.unlinkSync(filePath); } catch {}
+        // Increment daily count
+        await incrementDailyUploadCount();
 
-      successCount++;
-      console.log(`SUCCESS: ${result.youtubeUrl}`);
-    } else {
-      // Update queue item with error
+        successCount++;
+        console.log(`SUCCESS: ${result.youtubeUrl}`);
+      } else {
+        // Update queue item with error
+        await prisma.uploadQueue.update({
+          where: { id: item.id },
+          data: {
+            status: UploadStatus.FAILED,
+            errorMessage: result.error
+          }
+        });
+
+        failCount++;
+        console.log(`FAILED: ${result.error}`);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`Error processing item: ${errorMessage}`);
+
       await prisma.uploadQueue.update({
         where: { id: item.id },
         data: {
           status: UploadStatus.FAILED,
-          errorMessage: result.error
+          errorMessage: `Download/processing error: ${errorMessage}`
         }
       });
 
       failCount++;
-      console.log(`FAILED: ${result.error}`);
+    } finally {
+      // Clean up temp file
+      if (localFilePath) {
+        cleanupTempFile(localFilePath);
+      }
     }
   }
 
