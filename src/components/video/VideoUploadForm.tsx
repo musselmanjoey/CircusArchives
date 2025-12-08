@@ -29,6 +29,28 @@ const showTypeOptions: SelectOption[] = [
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 const ALLOWED_EXTENSIONS = ['.mp4', '.mov', '.avi', '.webm', '.mkv'];
 
+// Safe file property accessors for iOS Safari compatibility
+// Safari can throw "string did not match expected pattern" when accessing file properties
+function safeFileName(file: File | null): string {
+  if (!file) return 'Unknown file';
+  try {
+    return file.name || 'Video file';
+  } catch {
+    return 'Video file';
+  }
+}
+
+function safeFileSize(file: File | null): string {
+  if (!file) return '';
+  try {
+    const size = file.size;
+    if (typeof size !== 'number' || isNaN(size)) return 'Unknown size';
+    return formatFileSize(size);
+  } catch {
+    return 'Unknown size';
+  }
+}
+
 export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -178,8 +200,9 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
     try {
       const submitData = new FormData();
       submitData.append('file', formData.file);
-      // Use filename (without extension) as title
-      const title = formData.file.name.replace(/\.[^/.]+$/, '');
+      // Use filename (without extension) as title - use safe accessor for iOS
+      const fileName = safeFileName(formData.file);
+      const title = fileName.replace(/\.[^/.]+$/, '') || 'Untitled Video';
       submitData.append('title', title);
       submitData.append('year', formData.year.toString());
       submitData.append('showType', formData.showType);
@@ -275,8 +298,8 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-text truncate">{formData.file.name}</p>
-                <p className="text-sm text-text-muted">{formatFileSize(formData.file.size)}</p>
+                <p className="font-medium text-text truncate">{safeFileName(formData.file)}</p>
+                <p className="text-sm text-text-muted">{safeFileSize(formData.file)}</p>
               </div>
 
               <button
