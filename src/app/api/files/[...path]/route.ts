@@ -1,105 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Only enable this route for local storage - in production with Vercel Blob, files are served directly
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
+/**
+ * Local file serving route stub.
+ *
+ * This route is intentionally minimal to avoid bundling Node.js fs modules
+ * which would exceed Vercel's 300MB function size limit.
+ *
+ * In PRODUCTION: Files are served directly via Vercel Blob URLs - this route returns 404.
+ * In LOCAL DEV: Use the standalone file server or access files via the storage path directly.
+ */
 
-// Early exit for production - don't import fs modules at all
-const isProduction = STORAGE_PROVIDER === 'vercel-blob';
-
-// MIME types for video files
-const MIME_TYPES: Record<string, string> = {
-  '.mp4': 'video/mp4',
-  '.mov': 'video/quicktime',
-  '.avi': 'video/x-msvideo',
-  '.webm': 'video/webm',
-  '.mkv': 'video/x-matroska',
-};
+export const runtime = 'edge';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 export async function GET(
-  request: NextRequest,
-  context: RouteContext
+  _request: NextRequest,
+  _context: RouteContext
 ): Promise<NextResponse> {
-  // Only serve files in local storage mode - early return for production
-  if (isProduction || STORAGE_PROVIDER !== 'local') {
-    return NextResponse.json({ error: 'File serving disabled in production' }, { status: 404 });
-  }
-
-  // Dynamic imports to avoid bundling fs modules in production
-  const { readFile, stat } = await import('fs/promises');
-  const { existsSync } = await import('fs');
-  const pathModule = await import('path');
-
-  const LOCAL_STORAGE_PATH = process.env.LOCAL_STORAGE_PATH || pathModule.join(process.cwd(), 'uploads');
-
-  try {
-    const { path: pathSegments } = await context.params;
-    const filePath = pathModule.join(LOCAL_STORAGE_PATH, ...pathSegments);
-
-    // Security: Ensure the resolved path is within the storage directory
-    const resolvedPath = pathModule.resolve(filePath);
-    const resolvedBase = pathModule.resolve(LOCAL_STORAGE_PATH);
-
-    if (!resolvedPath.startsWith(resolvedBase)) {
-      return NextResponse.json({ error: 'Invalid path' }, { status: 403 });
-    }
-
-    if (!existsSync(resolvedPath)) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 });
-    }
-
-    const stats = await stat(resolvedPath);
-    const ext = pathModule.extname(resolvedPath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-    // Support range requests for video streaming
-    const range = request.headers.get('range');
-
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
-      const chunkSize = end - start + 1;
-
-      // Read the specific chunk
-      const { createReadStream } = await import('fs');
-      const stream = createReadStream(resolvedPath, { start, end });
-
-      // Convert Node stream to Web stream
-      const webStream = new ReadableStream({
-        start(controller) {
-          stream.on('data', (chunk) => controller.enqueue(chunk));
-          stream.on('end', () => controller.close());
-          stream.on('error', (err) => controller.error(err));
-        },
-      });
-
-      return new NextResponse(webStream, {
-        status: 206,
-        headers: {
-          'Content-Type': contentType,
-          'Content-Range': `bytes ${start}-${end}/${stats.size}`,
-          'Accept-Ranges': 'bytes',
-          'Content-Length': chunkSize.toString(),
-        },
-      });
-    }
-
-    // Full file read for non-range requests
-    const fileBuffer = await readFile(resolvedPath);
-
-    return new NextResponse(fileBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': stats.size.toString(),
-        'Accept-Ranges': 'bytes',
-        'Content-Disposition': `inline; filename="${pathModule.basename(resolvedPath)}"`,
-      },
-    });
-  } catch (error) {
-    console.error('File serve error:', error);
-    return NextResponse.json({ error: 'Failed to serve file' }, { status: 500 });
-  }
+  // This route is disabled - files should be accessed via their direct URLs
+  // - Production: Vercel Blob URLs (https://...blob.vercel-storage.com/...)
+  // - Local dev: Direct file access or standalone dev server
+  return NextResponse.json(
+    {
+      error: 'Direct file serving is not available.',
+      hint: 'In production, files are served via Vercel Blob URLs. In local development, configure LOCAL_STORAGE_PATH.'
+    },
+    { status: 404 }
+  );
 }
