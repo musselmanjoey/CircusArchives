@@ -135,13 +135,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     });
 
     // Check if we can upload immediately (local dev only, under daily limit)
+    // Skip auto-upload if SKIP_YOUTUBE_UPLOAD is set (test mode - items stay in queue)
+    const skipAutoUpload = process.env.SKIP_YOUTUBE_UPLOAD === 'true';
     const isLocalDev = process.env.STORAGE_PROVIDER !== 'vercel-blob';
     const today = getTodayDate();
     const todayRecord = await prisma.dailyUploadCount.findUnique({
       where: { date: today }
     });
     const todayCount = todayRecord?.count || 0;
-    const canUploadNow = isLocalDev && todayCount < DAILY_UPLOAD_LIMIT;
+    const canUploadNow = isLocalDev && !skipAutoUpload && todayCount < DAILY_UPLOAD_LIMIT;
 
     if (canUploadNow) {
       // Get act names for the YouTube title

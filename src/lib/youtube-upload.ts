@@ -3,6 +3,9 @@
  *
  * Calls the Python upload script to upload videos to YouTube.
  * Only works in local development - in prod, use the queue processor.
+ *
+ * Test Mode: Set SKIP_YOUTUBE_UPLOAD=true to mock uploads for testing.
+ * This will return a fake YouTube URL without actually uploading.
  */
 
 import { spawn } from 'child_process';
@@ -13,11 +16,15 @@ import type { ShowType } from '@/types';
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
 const UPLOAD_SCRIPT_PATH = path.join(process.cwd(), 'tools', 'youtube', 'scripts', 'upload.py');
 
+// Test mode flag - when true, skips actual YouTube upload and returns mock data
+const TEST_MODE = process.env.SKIP_YOUTUBE_UPLOAD === 'true';
+
 export interface YouTubeUploadResult {
   success: boolean;
   videoId?: string;
   youtubeUrl?: string;
   error?: string;
+  testMode?: boolean; // Indicates if this was a mock upload
 }
 
 /**
@@ -37,6 +44,28 @@ export async function uploadToYouTube(
     return {
       success: false,
       error: 'YouTube upload not available in production - video queued for manual processing'
+    };
+  }
+
+  // Test mode - return mock success without actually uploading
+  if (TEST_MODE) {
+    // Still check file exists to validate the flow
+    if (!fs.existsSync(filePath)) {
+      return { success: false, error: `File not found: ${filePath}`, testMode: true };
+    }
+
+    // Generate a mock video ID (prefixed with TEST_ for easy identification)
+    const mockVideoId = `TEST_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const mockUrl = `https://www.youtube.com/watch?v=${mockVideoId}`;
+
+    console.log(`[YouTube Upload] TEST MODE - Mocking upload for: ${title}`);
+    console.log(`[YouTube Upload] TEST MODE - Mock Video ID: ${mockVideoId}`);
+
+    return {
+      success: true,
+      videoId: mockVideoId,
+      youtubeUrl: mockUrl,
+      testMode: true
     };
   }
 

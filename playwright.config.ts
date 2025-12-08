@@ -52,5 +52,9 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000, // 2 minutes to start server
+    env: {
+      // Enable test mode for V6 upload tests - mocks YouTube uploads
+      SKIP_YOUTUBE_UPLOAD: 'true',
+    },
   },
 });

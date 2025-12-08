@@ -6,6 +6,44 @@ Test specification for the V6 Video Upload System feature. Covers upload flow, q
 
 ---
 
+## Test Implementation Status
+
+### Summary: 72 passed, 1 skipped (intentional)
+
+| Test File | Tests | Status |
+|-----------|-------|--------|
+| `v6-upload-ui.spec.ts` | 17 | ✅ All passing |
+| `v6-upload-api.spec.ts` | 18 | ✅ All passing |
+| `v6-queue-api.spec.ts` | 19 | ✅ All passing |
+| `v6-admin-queue.spec.ts` | 18 + 1 skipped | ✅ All passing |
+
+### Test Mode Configuration
+
+Tests run with `SKIP_YOUTUBE_UPLOAD=true` to mock YouTube uploads without consuming API quota. This is automatically set in `playwright.config.ts`.
+
+To run tests manually:
+```bash
+# Run all V6 tests on chromium (recommended)
+npx playwright test tests/e2e/v6-*.spec.ts --project=chromium --workers=1
+
+# Run specific test file
+npx playwright test tests/e2e/v6-admin-queue.spec.ts --project=chromium
+```
+
+### Test Categories Implemented
+
+| Category | Spec Section | Implemented |
+|----------|--------------|-------------|
+| Upload Page UI | 1.1 - 1.10 | ✅ |
+| Upload API | 2.1 - 2.9 | ✅ (2.10 requires prod) |
+| Queue Management API | 3.1 - 3.5 | ✅ |
+| Admin Queue Page | 4.1 - 4.9 | ✅ |
+| Storage Providers | 5.x | ⏭️ (tested implicitly) |
+| YouTube Integration | 6.x | ⏭️ (mocked in test mode) |
+| Daily Limit Tracking | 7.x | ⏭️ (tested implicitly) |
+
+---
+
 ## Test Categories
 
 1. Upload Page UI
