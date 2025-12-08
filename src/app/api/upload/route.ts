@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { uploadFile } from '@/lib/storage';
+import { uploadFile, getLocalFilePath } from '@/lib/storage';
+import { uploadToYouTube } from '@/lib/youtube-upload';
 import type { ApiResponse, UploadQueueItem, ShowType } from '@/types';
+
+// Force Node.js runtime (not Edge) to allow child_process for YouTube upload
+export const runtime = 'nodejs';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB limit
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska'];
@@ -130,7 +134,133 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       },
     });
 
-    return NextResponse.json({ data: queueItem as unknown as UploadQueueItem }, { status: 201 });
+    // Check if we can upload immediately (local dev only, under daily limit)
+    const isLocalDev = process.env.STORAGE_PROVIDER !== 'vercel-blob';
+    const today = getTodayDate();
+    const todayRecord = await prisma.dailyUploadCount.findUnique({
+      where: { date: today }
+    });
+    const todayCount = todayRecord?.count || 0;
+    const canUploadNow = isLocalDev && todayCount < DAILY_UPLOAD_LIMIT;
+
+    if (canUploadNow) {
+      // Get act names for the YouTube title
+      const acts = await prisma.act.findMany({
+        where: { id: { in: actIds } },
+        select: { name: true }
+      });
+      const actNames = acts.map(a => a.name);
+
+      // Get performer names for YouTube metadata
+      let performerNames: string[] = [];
+      if (performerIds && performerIds.length > 0) {
+        const performers = await prisma.user.findMany({
+          where: { id: { in: performerIds } },
+          select: { firstName: true, lastName: true }
+        });
+        performerNames = performers.map(p => `${p.firstName} ${p.lastName}`);
+      }
+
+      // Get local file path
+      const localPath = getLocalFilePath(result.url);
+
+      console.log(`[Upload API] Attempting immediate YouTube upload...`);
+      console.log(`[Upload API] File path: ${localPath}`);
+      console.log(`[Upload API] Performers: ${performerNames.join(', ') || 'none'}`);
+
+      const uploadResult = await uploadToYouTube(
+        localPath,
+        title.trim(),
+        yearNum,
+        showType,
+        actNames,
+        description?.trim(),
+        performerNames
+      );
+
+      if (uploadResult.success && uploadResult.youtubeUrl && uploadResult.videoId) {
+        // Update queue item as uploaded
+        await prisma.uploadQueue.update({
+          where: { id: queueItem.id },
+          data: {
+            status: 'UPLOADED',
+            youtubeUrl: uploadResult.youtubeUrl,
+            processedAt: new Date()
+          }
+        });
+
+        // Create video entry in main database
+        const video = await prisma.video.create({
+          data: {
+            youtubeUrl: uploadResult.youtubeUrl,
+            youtubeId: uploadResult.videoId,
+            title: title.trim(),
+            year: yearNum,
+            description: description?.trim() || null,
+            showType,
+            uploaderId: session.user.id,
+          }
+        });
+
+        // Create video-act relationships
+        if (actIds.length > 0) {
+          await prisma.videoAct.createMany({
+            data: actIds.map(actId => ({
+              videoId: video.id,
+              actId
+            }))
+          });
+        }
+
+        // Create video-performer relationships
+        if (performerIds && performerIds.length > 0) {
+          await prisma.videoPerformer.createMany({
+            data: performerIds.map(userId => ({
+              videoId: video.id,
+              userId
+            }))
+          });
+        }
+
+        // Increment daily upload count
+        await prisma.dailyUploadCount.upsert({
+          where: { date: today },
+          update: { count: { increment: 1 } },
+          create: { date: today, count: 1 }
+        });
+
+        return NextResponse.json({
+          data: {
+            ...queueItem,
+            status: 'UPLOADED',
+            youtubeUrl: uploadResult.youtubeUrl
+          } as unknown as UploadQueueItem,
+          message: `Video uploaded successfully! Watch at: ${uploadResult.youtubeUrl}`,
+          uploadedImmediately: true
+        }, { status: 201 });
+      } else {
+        // Upload failed - leave as pending, return the error
+        console.error(`[Upload API] YouTube upload failed: ${uploadResult.error}`);
+        return NextResponse.json({
+          data: queueItem as unknown as UploadQueueItem,
+          message: `Video saved but YouTube upload failed: ${uploadResult.error}. Video has been queued for retry.`,
+          uploadedImmediately: false
+        }, { status: 201 });
+      }
+    }
+
+    // Either in prod or at daily limit - just queue it
+    const remainingSlots = DAILY_UPLOAD_LIMIT - todayCount;
+    const queueMessage = remainingSlots <= 0
+      ? `Daily upload limit reached (${DAILY_UPLOAD_LIMIT}/day). Video has been queued and will be uploaded tomorrow.`
+      : `Video queued for upload. It will be processed shortly.`;
+
+    return NextResponse.json({
+      data: queueItem as unknown as UploadQueueItem,
+      message: queueMessage,
+      uploadedImmediately: false,
+      dailyUploadsRemaining: Math.max(0, remainingSlots)
+    }, { status: 201 });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });

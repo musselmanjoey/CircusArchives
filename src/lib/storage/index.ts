@@ -35,3 +35,22 @@ export async function deleteFile(url: string): Promise<void> {
   const provider = await getStorageProvider();
   return provider.delete(url);
 }
+
+/**
+ * Get the local filesystem path for a stored file
+ * Only works with local storage provider
+ */
+export function getLocalFilePath(blobUrl: string): string {
+  const baseDir = process.env.LOCAL_STORAGE_PATH || require('path').join(process.cwd(), 'uploads');
+  const baseUrl = process.env.LOCAL_STORAGE_URL || '/api/files';
+
+  // Extract pathname from URL (e.g., /api/files/uploads/userId/file.mp4 -> uploads/userId/file.mp4)
+  const pathname = blobUrl.replace(`${baseUrl}/`, '');
+
+  // Handle UNC paths on Windows
+  if (baseDir.startsWith('\\\\')) {
+    return `${baseDir}\\${pathname.replace(/\//g, '\\')}`;
+  }
+
+  return require('path').join(baseDir, pathname);
+}

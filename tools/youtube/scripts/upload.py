@@ -437,6 +437,8 @@ Examples:
     parser.add_argument('--act', help='Act type (e.g., Juggling, Russian Bar)')
     parser.add_argument('--year', type=int, help='Performance year')
     parser.add_argument('--show', help='Show name (e.g., Home Show, Callaway Gardens)')
+    parser.add_argument('--performers', help='Comma-separated list of performer names')
+    parser.add_argument('--notes', help='Additional notes/description from uploader')
 
     args = parser.parse_args()
 
@@ -450,10 +452,17 @@ Examples:
         elif args.file and args.title:
             # Determine description
             if args.act:
+                # Parse performers if provided
+                performers = None
+                if args.performers:
+                    performers = [p.strip() for p in args.performers.split(',') if p.strip()]
+
                 description = generate_description(
                     act=args.act,
                     year=args.year,
-                    show=args.show
+                    show=args.show,
+                    performers=performers,
+                    notes=args.notes
                 )
                 tags = build_tags(args.act, args.year, args.show)
             else:

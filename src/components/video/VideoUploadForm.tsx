@@ -260,7 +260,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
             {isSubmitting && (
               <div className="mt-3">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-text-secondary">Uploading...</span>
+                  <span className="text-text-secondary">Uploading to YouTube...</span>
                   <span className="text-garnet font-medium">{uploadProgress}%</span>
                 </div>
                 <div className="h-2 bg-border rounded-full overflow-hidden">
@@ -269,6 +269,9 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+                <p className="text-xs text-text-muted mt-2">
+                  This may take a few minutes. Please don&apos;t close this page.
+                </p>
               </div>
             )}
           </div>
