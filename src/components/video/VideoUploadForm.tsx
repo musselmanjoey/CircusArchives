@@ -124,20 +124,24 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
 
       try {
         fileName = file.name || 'video.mp4';
-      } catch {
-        console.warn('Could not read file.name, using default');
+      } catch (e) {
+        // Show error in UI for debugging on iOS
+        setErrors({ ...errors, file: `Step 1 failed (file.name): ${e instanceof Error ? e.message : String(e)}` });
+        return;
       }
 
       try {
         fileSize = file.size || 0;
-      } catch {
-        console.warn('Could not read file.size');
+      } catch (e) {
+        setErrors({ ...errors, file: `Step 2 failed (file.size): ${e instanceof Error ? e.message : String(e)}` });
+        return;
       }
 
       try {
         fileType = file.type || 'video/mp4';
-      } catch {
-        console.warn('Could not read file.type, using default');
+      } catch (e) {
+        setErrors({ ...errors, file: `Step 3 failed (file.type): ${e instanceof Error ? e.message : String(e)}` });
+        return;
       }
 
       // Convert to Blob immediately - this is the key fix for iOS Safari
@@ -145,11 +149,9 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
       try {
         const arrayBuffer = await file.arrayBuffer();
         blob = new Blob([arrayBuffer], { type: fileType });
-        console.log('[FileSelect] Successfully converted to Blob:', blob.size, 'bytes');
       } catch (blobErr) {
-        console.error('[FileSelect] Blob conversion failed:', blobErr);
-        // If blob conversion fails, still try to use the file directly
-        blob = file;
+        setErrors({ ...errors, file: `Step 4 failed (arrayBuffer/Blob): ${blobErr instanceof Error ? blobErr.message : String(blobErr)}` });
+        return;
       }
 
       setErrors({ ...errors, file: undefined });
@@ -161,8 +163,7 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
         fileSize,
       });
     } catch (err) {
-      console.error('File select error:', err);
-      setErrors({ ...errors, file: 'Error processing file. Please try again.' });
+      setErrors({ ...errors, file: `Unexpected error: ${err instanceof Error ? err.message : String(err)}` });
     }
   };
 
@@ -174,9 +175,8 @@ export function VideoUploadForm({ acts, onSubmit }: VideoUploadFormProps) {
       }
     } catch (err) {
       // iOS Safari can throw "string did not match expected pattern" error
-      // when accessing file properties in certain conditions
-      console.error('File selection error:', err);
-      setErrors({ ...errors, file: 'Error selecting file. Please try again or use a different browser.' });
+      // Show the actual error message so we can debug on iOS
+      setErrors({ ...errors, file: `File change error: ${err instanceof Error ? err.message : String(err)}` });
     }
   };
 
