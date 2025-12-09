@@ -199,3 +199,35 @@ export interface UploadQueueUpdateInput {
   youtubeUrl?: string;
   errorMessage?: string;
 }
+
+// Discovery Tool types
+export type DiscoveryStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PUSHED';
+
+export interface DiscoveredVideo {
+  id: string;
+  youtubeId: string;
+  youtubeUrl: string;
+  rawTitle: string;
+  rawDescription?: string;
+  channelName?: string;
+  thumbnailUrl?: string;
+  publishedAt?: Date;
+  inferredYear?: number;
+  inferredShowType?: string;
+  inferredActNames: string[];
+  inferredPerformers: string[];
+  status: DiscoveryStatus;
+  reviewNotes?: string;
+  prodVideoId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DiscoveredVideoUpdateInput {
+  inferredYear?: number;
+  inferredShowType?: string;
+  inferredActNames?: string[];
+  inferredPerformers?: string[];
+  status?: DiscoveryStatus;
+  reviewNotes?: string;
+}

@@ -222,3 +222,43 @@ model DailyUploadCount {
 
   @@map("daily_upload_counts")
 }
+
+// Discovery Tool Status
+enum DiscoveryStatus {
+  PENDING   // Awaiting review
+  APPROVED  // Reviewed and ready to push
+  REJECTED  // Not suitable for archive
+  PUSHED    // Successfully pushed to prod
+}
+
+// Discovery Tool: Videos found via YouTube search, pending review
+model DiscoveredVideo {
+  id              String          @id @default(uuid())
+  youtubeId       String          @unique @map("youtube_id")
+  youtubeUrl      String          @map("youtube_url")
+
+  // Raw metadata from YouTube
+  rawTitle        String          @map("raw_title")
+  rawDescription  String?         @map("raw_description")
+  channelName     String?         @map("channel_name")
+  thumbnailUrl    String?         @map("thumbnail_url")
+  publishedAt     DateTime?       @map("published_at")
+
+  // Inferred/parsed metadata (editable during review)
+  inferredYear      Int?            @map("inferred_year")
+  inferredShowType  String?         @map("inferred_show_type") // HOME, CALLAWAY, or null
+  inferredActNames  String[]        @map("inferred_act_names")
+  inferredPerformers String[]       @map("inferred_performers") // Name guesses
+
+  // Review fields
+  status          DiscoveryStatus @default(PENDING)
+  reviewNotes     String?         @map("review_notes")
+
+  // Track which prod video it became (after push)
+  prodVideoId     String?         @map("prod_video_id")
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@map("discovered_videos")
+}
