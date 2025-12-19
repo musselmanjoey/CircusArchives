@@ -35,12 +35,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env
 .env.local
 .env.production
 .env.production.local
 .env*.local
+.env.vercel
 
 # vercel
 .vercel
@@ -61,3 +62,9 @@ tools/youtube/output/
 
 # local video uploads (dev storage)
 /uploads/
+
+# backup files
+*.bak
+
+# personal notes
+notes/

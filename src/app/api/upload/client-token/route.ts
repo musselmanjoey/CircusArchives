@@ -48,14 +48,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }),
         };
       },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // This is called after the file is uploaded to Vercel Blob
-        // Note: This won't work on localhost - only in production
-        console.log('[Blob Upload] Completed:', blob.url);
-        console.log('[Blob Upload] Token payload:', tokenPayload);
-
-        // We don't create the queue entry here - that's done in a separate API call
-        // after the client receives the blob URL
+      onUploadCompleted: async () => {
+        // Called after file uploads to Vercel Blob
+        // Queue entry is created in a separate API call after client receives blob URL
       },
     });
 

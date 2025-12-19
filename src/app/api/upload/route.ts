@@ -173,10 +173,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       // Get local file path
       const localPath = await getLocalFilePath(result.url);
 
-      console.log(`[Upload API] Attempting immediate YouTube upload...`);
-      console.log(`[Upload API] File path: ${localPath}`);
-      console.log(`[Upload API] Performers: ${performerNames.join(', ') || 'none'}`);
-
       const uploadResult = await uploadToYouTube(
         localPath,
         title.trim(),

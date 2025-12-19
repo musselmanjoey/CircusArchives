@@ -1,12 +1,26 @@
 # Circus Video Archive
 
-A community-driven platform for preserving and celebrating FSU Flying High Circus performance history.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://www.postgresql.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![Deployed on Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://vercel.com)
 
-**Live Site:** [flyinghighcircusarchives.com](https://flyinghighcircusarchives.com)
+A community-driven video archive platform for FSU Flying High Circus alumni to preserve and celebrate performance history.
 
-## Mission
+**🎪 Live Site:** [flyinghighcircusarchives.com](https://flyinghighcircusarchives.com)
 
-Following the tornado that damaged the circus tent and caused a multi-year disruption, significant institutional knowledge was lost. This platform aims to recapture that knowledge and give it back to the performer community as a lasting gift.
+## The Problem
+
+Following a tornado that damaged the circus tent and caused a multi-year disruption, significant institutional knowledge and performance history was lost. Alumni had videos scattered across personal drives with no centralized way to share or discover them.
+
+## The Solution
+
+This platform provides a searchable video archive where alumni can:
+- **Upload & catalog** performances with metadata (act type, year, performers)
+- **Tag performers** to create discoverable connections between videos
+- **Vote on favorites** with weighted voting for tagged performers
+- **Browse by category** across 24 circus act types
 
 ## Features
 
@@ -144,12 +158,19 @@ npx prisma studio
 npm run queue:process
 ```
 
+## Technical Highlights
+
+- **Client-side uploads to Vercel Blob** bypass the 4.5MB serverless function limit, enabling 2GB video uploads directly from mobile browsers
+- **Weighted voting system** gives performers a 2x vote bonus for videos they're tagged in, incentivizing accurate performer attribution
+- **Hybrid upload pipeline** queues videos in Vercel Blob, then processes them via local script for YouTube upload (working around YouTube API quota limits)
+- **Mobile-first responsive design** with hamburger navigation, tested at 375px width
+- **Name-based auth** (no passwords) tailored for a trusted alumni community
+
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - Technical decisions
+- [Architecture](docs/ARCHITECTURE.md) - Technical decisions and trade-offs
 - [API](docs/API.md) - Endpoint documentation
 - [Deployment](docs/DEPLOYMENT.md) - Hosting and CI/CD
-- [Business Proposal](docs/business/PROPOSAL.md) - Project proposal
 
 ## License
 

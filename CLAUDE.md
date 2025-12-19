@@ -39,8 +39,15 @@ npx prisma studio        # Visual DB browser
 - V6 ✅ Video Upload System (client-side Vercel Blob upload, queue processing, YouTube upload via local script)
 - V7 Planned: OAuth + Email invites
 
+## Pre-Commit Checklist
+Before every commit, verify:
+1. `git status` - no `.env*`, credentials, or secrets staged
+2. `npx tsc --noEmit` - no type errors
+3. No `console.log` in production code
+
+Never commit: `.env.vercel`, `.env.local`, `client_secret*.json`, API keys, tokens
+
 ## IMPORTANT
 - YouTube-only video hosting (firm constraint)
 - No console.log in production
-- Run `npx tsc --noEmit` before commits
 - Use TDD: write Playwright tests first for new features
