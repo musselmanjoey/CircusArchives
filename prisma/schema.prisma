@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_PUBLIC_URL")
 }
 
 // V5: Show Type Enum
@@ -39,6 +39,9 @@ model Video {
 
   // V5: Show type (required)
   showType    ShowType @map("show_type")
+
+  // V6: Flag for videos that need performer tagging (set by discovery tool)
+  needsPerformers Boolean @default(false) @map("needs_performers")
 
   uploaderId  String?  @map("uploader_id")
   uploader    User?    @relation("UploadedVideos", fields: [uploaderId], references: [id])
@@ -92,6 +95,7 @@ model User {
   // App relations
   videos        Video[]          @relation("UploadedVideos")
   performances  VideoPerformer[]
+  performerTags VideoPerformer[] @relation("PerformerTaggedBy") // Tags this user added
   votes         Vote[]
   comments      Comment[]
   uploadQueue   UploadQueue[]
@@ -137,6 +141,11 @@ model VideoPerformer {
   video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // V6: Track who added this performer tag (for audit)
+  taggedById String?  @map("tagged_by_id")
+  taggedBy   User?    @relation("PerformerTaggedBy", fields: [taggedById], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([videoId, userId])
@@ -249,6 +258,7 @@ model DiscoveredVideo {
   inferredShowType  String?         @map("inferred_show_type") // HOME, CALLAWAY, or null
   inferredActNames  String[]        @map("inferred_act_names")
   inferredPerformers String[]       @map("inferred_performers") // Name guesses
+  inferredPerformerIds String[]     @map("inferred_performer_ids") @default([]) // User IDs for performers
 
   // Review fields
   status          DiscoveryStatus @default(PENDING)

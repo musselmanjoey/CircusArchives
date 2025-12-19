@@ -111,7 +111,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `DATABASE_PUBLIC_URL` | Yes | PostgreSQL connection string (use Railway's public URL) |
 | `AUTH_SECRET` | Yes | NextAuth.js secret (generate with `openssl rand -base64 32`) |
 | `AUTH_TRUST_HOST` | Production | Set to `true` for production |
 | `NEXT_PUBLIC_APP_URL` | Optional | Public URL of the app |
