@@ -46,12 +46,14 @@ export interface Video {
   year: number;
   description?: string;
   showType: ShowType;
+  // V6: Flag for videos needing performer tags (set by discovery tool)
+  needsPerformers?: boolean;
   // V5: Multiple acts via join table
   acts?: VideoAct[];
   // Legacy single act (for backward compat during transition)
   act?: Act;
   uploaderId?: string;
-  uploader?: User;
+  uploader?: Performer | null;
   performers?: VideoPerformer[];
   voteCount?: number;
   createdAt: Date;
@@ -216,6 +218,7 @@ export interface DiscoveredVideo {
   inferredShowType?: string;
   inferredActNames: string[];
   inferredPerformers: string[];
+  inferredPerformerIds?: string[];
   status: DiscoveryStatus;
   reviewNotes?: string;
   prodVideoId?: string;
@@ -228,6 +231,7 @@ export interface DiscoveredVideoUpdateInput {
   inferredShowType?: string;
   inferredActNames?: string[];
   inferredPerformers?: string[];
+  inferredPerformerIds?: string[];
   status?: DiscoveryStatus;
   reviewNotes?: string;
 }
