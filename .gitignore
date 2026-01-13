@@ -68,3 +68,6 @@ tools/youtube/output/
 
 # personal notes
 notes/
+
+# Claude Code temp directories
+tmpclaude-*

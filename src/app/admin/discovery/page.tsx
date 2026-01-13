@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { getThumbnailUrl } from '@/lib/youtube';
 import { getYearRange } from '@/lib/utils';
-import type { ApiResponse, DiscoveredVideo, DiscoveryStatus, Act } from '@/types';
+import type { ApiResponse, DiscoveredVideo, DiscoveryStatus, Act, Performer } from '@/types';
 
 type FilterStatus = 'ALL' | DiscoveryStatus;
 
@@ -28,6 +28,7 @@ export default function DiscoveryAdminPage() {
   const [items, setItems] = useState<DiscoveredVideo[]>([]);
   const [stats, setStats] = useState<DiscoveryStats | null>(null);
   const [acts, setActs] = useState<Act[]>([]);
+  const [users, setUsers] = useState<Performer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('PENDING');
@@ -40,6 +41,8 @@ export default function DiscoveryAdminPage() {
   const [editYear, setEditYear] = useState<number | null>(null);
   const [editShowType, setEditShowType] = useState<string>('');
   const [editActNames, setEditActNames] = useState<string[]>([]);
+  const [editPerformerIds, setEditPerformerIds] = useState<string[]>([]);
+  const [performerSearch, setPerformerSearch] = useState('');
 
   const years = getYearRange(1950);
   const yearOptions: SelectOption[] = [
@@ -84,9 +87,22 @@ export default function DiscoveryAdminPage() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/users?limit=500');
+      const result = await response.json();
+      if (result.data) {
+        setUsers(result.data);
+      }
+    } catch (err) {
+      // Users are optional for display
+    }
+  };
+
   useEffect(() => {
     fetchItems();
     fetchActs();
+    fetchUsers();
   }, [fetchItems]);
 
   const handleUpdateStatus = async (id: string, status: DiscoveryStatus) => {
@@ -121,6 +137,7 @@ export default function DiscoveryAdminPage() {
           inferredYear: editYear,
           inferredShowType: editShowType || null,
           inferredActNames: editActNames,
+          inferredPerformerIds: editPerformerIds,
         }),
       });
 
@@ -204,6 +221,8 @@ export default function DiscoveryAdminPage() {
     setEditYear(item.inferredYear || null);
     setEditShowType(item.inferredShowType || '');
     setEditActNames(item.inferredActNames || []);
+    setEditPerformerIds(item.inferredPerformerIds || []);
+    setPerformerSearch('');
   };
 
   const toggleActName = (actName: string) => {
@@ -213,6 +232,19 @@ export default function DiscoveryAdminPage() {
         : [...prev, actName]
     );
   };
+
+  const togglePerformer = (userId: string) => {
+    setEditPerformerIds(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const filteredUsers = users.filter(u => {
+    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+    return fullName.includes(performerSearch.toLowerCase());
+  });
 
   const getStatusBadge = (status: DiscoveryStatus) => {
     const styles: Record<DiscoveryStatus, string> = {
@@ -508,6 +540,74 @@ export default function DiscoveryAdminPage() {
                                 );
                               })}
                             </div>
+                          </div>
+
+                          {/* Performers Section */}
+                          <div>
+                            <label className="block text-sm font-medium text-text-secondary mb-2">
+                              Performers
+                            </label>
+                            {/* Selected performers */}
+                            {editPerformerIds.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {editPerformerIds.map(id => {
+                                  const user = users.find(u => u.id === id);
+                                  if (!user) return null;
+                                  return (
+                                    <span
+                                      key={id}
+                                      className="inline-flex items-center gap-1 px-2 py-1 bg-garnet text-white rounded-lg text-sm"
+                                    >
+                                      {user.firstName} {user.lastName}
+                                      <button
+                                        type="button"
+                                        onClick={() => togglePerformer(id)}
+                                        className="hover:bg-white/20 rounded p-0.5"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Search input */}
+                            <input
+                              type="text"
+                              placeholder="Search performers..."
+                              value={performerSearch}
+                              onChange={(e) => setPerformerSearch(e.target.value)}
+                              className="w-full px-3 py-2 border border-border rounded-lg text-sm mb-2 bg-card"
+                            />
+                            {/* Filtered user list (show when searching) */}
+                            {performerSearch && (
+                              <div className="max-h-40 overflow-y-auto border border-border rounded-lg bg-card">
+                                {filteredUsers.slice(0, 20).map(user => {
+                                  const isSelected = editPerformerIds.includes(user.id);
+                                  return (
+                                    <button
+                                      key={user.id}
+                                      type="button"
+                                      onClick={() => {
+                                        togglePerformer(user.id);
+                                        setPerformerSearch('');
+                                      }}
+                                      className={`w-full text-left px-3 py-2 text-sm hover:bg-surface ${
+                                        isSelected ? 'bg-garnet/10 text-garnet' : ''
+                                      }`}
+                                    >
+                                      {user.firstName} {user.lastName}
+                                      {isSelected && ' ✓'}
+                                    </button>
+                                  );
+                                })}
+                                {filteredUsers.length === 0 && (
+                                  <div className="px-3 py-2 text-sm text-text-muted">No matches</div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex gap-2">

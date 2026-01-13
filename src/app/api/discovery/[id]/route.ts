@@ -59,6 +59,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ...(body.inferredShowType !== undefined && { inferredShowType: body.inferredShowType }),
         ...(body.inferredActNames !== undefined && { inferredActNames: body.inferredActNames }),
         ...(body.inferredPerformers !== undefined && { inferredPerformers: body.inferredPerformers }),
+        ...(body.inferredPerformerIds !== undefined && { inferredPerformerIds: body.inferredPerformerIds }),
         ...(body.status !== undefined && { status: body.status as DiscoveryStatus }),
         ...(body.reviewNotes !== undefined && { reviewNotes: body.reviewNotes }),
       },

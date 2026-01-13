@@ -68,6 +68,115 @@ const SHOW_TYPE_PATTERNS = {
 // Year extraction pattern (1950-2030)
 const YEAR_PATTERN = /\b(19[5-9]\d|20[0-3]\d)\b/g;
 
+// Common US first names for performer detection
+// This list helps filter capitalized word pairs to find likely names
+const COMMON_FIRST_NAMES = new Set([
+  // Female names
+  'abby', 'abigail', 'ada', 'addison', 'adriana', 'adrienne', 'agnes', 'aileen', 'aimee', 'alana',
+  'alberta', 'alexa', 'alexandra', 'alexis', 'alice', 'alicia', 'alina', 'alison', 'allison', 'alyssa',
+  'amanda', 'amber', 'amelia', 'amy', 'ana', 'andrea', 'angela', 'angelica', 'angelina', 'angie',
+  'anita', 'ann', 'anna', 'annabelle', 'anne', 'annette', 'annie', 'april', 'ariana', 'ariel',
+  'arlene', 'ashley', 'audrey', 'autumn', 'ava', 'bailey', 'barbara', 'beatrice', 'becky', 'belinda',
+  'bella', 'bernadette', 'bernice', 'beth', 'bethany', 'betty', 'beverly', 'bianca', 'bonnie', 'brandi',
+  'brandy', 'brenda', 'briana', 'brianna', 'bridget', 'brittany', 'brittney', 'brooke', 'caitlin', 'caitlyn',
+  'camille', 'candace', 'candice', 'cara', 'carly', 'carmen', 'carol', 'caroline', 'carolyn', 'carrie',
+  'casey', 'cassandra', 'cassidy', 'cassie', 'catherine', 'cathy', 'cecilia', 'celeste', 'celia', 'charlene',
+  'charlotte', 'chelsea', 'cheryl', 'chloe', 'christa', 'christina', 'christine', 'christy', 'cindy', 'claire',
+  'clara', 'claudia', 'colleen', 'connie', 'constance', 'cora', 'corinne', 'courtney', 'crystal', 'cynthia',
+  'daisy', 'dana', 'daniela', 'danielle', 'daphne', 'darlene', 'dawn', 'deanna', 'debbie', 'deborah',
+  'debra', 'delaney', 'delia', 'denise', 'desiree', 'destiny', 'diana', 'diane', 'dianna', 'dianne',
+  'dolores', 'dominique', 'donna', 'dora', 'doreen', 'doris', 'dorothy', 'edith', 'edna', 'eileen',
+  'elaine', 'eleanor', 'elena', 'elisa', 'elisabeth', 'elise', 'eliza', 'elizabeth', 'ella', 'ellen',
+  'ellie', 'eloise', 'elsie', 'emilia', 'emily', 'emma', 'erica', 'erika', 'erin', 'esther',
+  'ethel', 'eva', 'evelyn', 'faith', 'faye', 'felicia', 'fiona', 'florence', 'frances', 'francesca',
+  'gail', 'gemma', 'genevieve', 'georgia', 'geraldine', 'gertrude', 'gina', 'ginger', 'gladys', 'glenda',
+  'gloria', 'grace', 'gracie', 'gretchen', 'gwendolyn', 'hailey', 'haley', 'hannah', 'harriet', 'haylee',
+  'hayley', 'hazel', 'heather', 'heidi', 'helen', 'henrietta', 'hillary', 'holly', 'hope', 'ida',
+  'imogene', 'inez', 'ingrid', 'irene', 'iris', 'irma', 'isabel', 'isabella', 'isabelle', 'ivy',
+  'jackie', 'jaclyn', 'jacqueline', 'jade', 'jaime', 'jamie', 'jan', 'jane', 'janelle', 'janet',
+  'janice', 'janie', 'janine', 'jasmine', 'jean', 'jeanette', 'jeanne', 'jeannie', 'jenna', 'jennie',
+  'jennifer', 'jenny', 'jessica', 'jessie', 'jill', 'jillian', 'joan', 'joann', 'joanna', 'joanne',
+  'jocelyn', 'jodi', 'jodie', 'jody', 'johanna', 'jolene', 'jordan', 'josephine', 'joy', 'joyce',
+  'juanita', 'judith', 'judy', 'julia', 'juliana', 'julianne', 'julie', 'juliet', 'june', 'justine',
+  'kaitlin', 'kaitlyn', 'kara', 'karen', 'kari', 'karin', 'karla', 'kate', 'katelyn', 'katherine',
+  'kathleen', 'kathryn', 'kathy', 'katie', 'katrina', 'kay', 'kayla', 'kaylee', 'keisha', 'kelley',
+  'kelli', 'kellie', 'kelly', 'kelsey', 'kendra', 'kennedy', 'kerry', 'kim', 'kimberly', 'kirsten',
+  'krista', 'kristen', 'kristi', 'kristie', 'kristin', 'kristina', 'kristine', 'kristy', 'krystal', 'lacey',
+  'lana', 'laura', 'lauren', 'laurie', 'laverne', 'lea', 'leah', 'leigh', 'lena', 'leona',
+  'leslie', 'lila', 'lillian', 'lillie', 'lily', 'linda', 'lindsay', 'lindsey', 'lisa', 'liz',
+  'liza', 'logan', 'lois', 'loretta', 'lori', 'lorraine', 'louise', 'lucia', 'lucille', 'lucy',
+  'lydia', 'lynn', 'mabel', 'mackenzie', 'macy', 'maddison', 'madeline', 'madison', 'mae', 'maggie',
+  'mallory', 'mandy', 'marcella', 'marcia', 'margaret', 'margarita', 'marguerite', 'maria', 'marian', 'marianne',
+  'marie', 'marilyn', 'marina', 'marisa', 'marissa', 'marjorie', 'marlene', 'marsha', 'martha', 'mary',
+  'maryann', 'matilda', 'maureen', 'maxine', 'maya', 'mckenzie', 'meagan', 'megan', 'meghan', 'melanie',
+  'melinda', 'melissa', 'melody', 'mercedes', 'meredith', 'mia', 'michaela', 'michele', 'michelle', 'mikayla',
+  'mildred', 'millie', 'mindy', 'minnie', 'miranda', 'miriam', 'misty', 'molly', 'mona', 'monica',
+  'monique', 'morgan', 'muriel', 'myra', 'myrtle', 'nadine', 'nancy', 'naomi', 'natalie', 'natasha',
+  'nellie', 'nettie', 'nichole', 'nicole', 'nina', 'nora', 'norma', 'olga', 'olive', 'olivia',
+  'opal', 'paige', 'pam', 'pamela', 'pat', 'patricia', 'patsy', 'patti', 'patty', 'paula',
+  'pauline', 'pearl', 'peggy', 'penny', 'phyllis', 'polly', 'priscilla', 'rachael', 'rachel', 'ramona',
+  'randi', 'rebecca', 'regina', 'renee', 'rhonda', 'rita', 'roberta', 'robin', 'robyn', 'rochelle',
+  'rosa', 'rosalie', 'rose', 'rosemarie', 'rosemary', 'rosie', 'roxanne', 'ruby', 'ruth', 'sabrina',
+  'sadie', 'sally', 'samantha', 'sandra', 'sandy', 'sara', 'sarah', 'savannah', 'selena', 'serena',
+  'shana', 'shannon', 'shari', 'sharon', 'shauna', 'shawn', 'shawna', 'sheila', 'shelby', 'shelia',
+  'shelley', 'shelly', 'sheri', 'sherri', 'sherrie', 'sherry', 'sheryl', 'shirley', 'sierra', 'simone',
+  'sonia', 'sonja', 'sonya', 'sophia', 'sophie', 'stacey', 'staci', 'stacie', 'stacy', 'stefanie',
+  'stella', 'stephanie', 'sue', 'summer', 'susan', 'susanne', 'susie', 'suzanne', 'sylvia', 'tabitha',
+  'tamara', 'tami', 'tamika', 'tammie', 'tammy', 'tanya', 'tara', 'taylor', 'teresa', 'teri',
+  'terri', 'terry', 'thelma', 'theresa', 'therese', 'tiffany', 'tina', 'toni', 'tonya', 'tracey',
+  'traci', 'tracie', 'tracy', 'tricia', 'trina', 'trisha', 'trudy', 'valerie', 'vanessa', 'velma',
+  'vera', 'verna', 'veronica', 'vicki', 'vickie', 'vicky', 'victoria', 'viola', 'violet', 'virginia',
+  'vivian', 'wanda', 'wendy', 'whitney', 'wilma', 'winifred', 'yolanda', 'yvette', 'yvonne', 'zoe',
+  // Male names
+  'aaron', 'adam', 'adrian', 'aiden', 'alan', 'albert', 'alec', 'alejandro', 'alex', 'alexander',
+  'alfred', 'allen', 'alvin', 'andre', 'andrew', 'andy', 'angel', 'anthony', 'antonio', 'archie',
+  'arnold', 'arthur', 'austin', 'barry', 'ben', 'benjamin', 'bernard', 'bill', 'billy', 'blake',
+  'bob', 'bobby', 'brad', 'bradley', 'brandon', 'brendan', 'brent', 'brett', 'brian', 'bruce',
+  'bryan', 'bryce', 'byron', 'caleb', 'calvin', 'cameron', 'carl', 'carlos', 'carter', 'casey',
+  'cecil', 'chad', 'charles', 'charlie', 'chase', 'chester', 'chris', 'christian', 'christopher', 'clarence',
+  'clark', 'claude', 'clayton', 'clifford', 'clifton', 'clint', 'clinton', 'clyde', 'cody', 'colby',
+  'cole', 'colin', 'collin', 'colton', 'connor', 'corey', 'cornelius', 'cory', 'craig', 'curtis',
+  'dale', 'dallas', 'dalton', 'damian', 'damon', 'dan', 'dana', 'daniel', 'danny', 'darrell',
+  'darren', 'darryl', 'darwin', 'dave', 'david', 'dean', 'dennis', 'derek', 'derrick', 'devin',
+  'devon', 'dewayne', 'dewey', 'dexter', 'diego', 'dillon', 'dominic', 'dominick', 'don', 'donald',
+  'donnie', 'dorian', 'doug', 'douglas', 'drew', 'duane', 'dustin', 'dwayne', 'dwight', 'dylan',
+  'earl', 'ed', 'eddie', 'edgar', 'edmond', 'edmund', 'eduardo', 'edward', 'edwin', 'eli',
+  'elijah', 'elliot', 'elliott', 'ellis', 'elmer', 'emanuel', 'emilio', 'emmanuel', 'emmett', 'enrique',
+  'eric', 'erik', 'ernest', 'ernie', 'ethan', 'eugene', 'evan', 'everett', 'felix', 'fernando',
+  'floyd', 'forrest', 'francis', 'francisco', 'frank', 'franklin', 'fred', 'freddie', 'frederick', 'gabriel',
+  'garrett', 'gary', 'gavin', 'gene', 'geoffrey', 'george', 'gerald', 'geraldo', 'gerard', 'gilbert',
+  'glen', 'glenn', 'gordon', 'grady', 'graham', 'grant', 'greg', 'gregg', 'gregory', 'guy',
+  'harold', 'harry', 'harvey', 'hector', 'henry', 'herbert', 'herman', 'homer', 'horace', 'howard',
+  'hubert', 'hugh', 'hugo', 'hunter', 'ian', 'irvin', 'irving', 'isaac', 'isaiah', 'ismael',
+  'ivan', 'jack', 'jackson', 'jacob', 'jake', 'james', 'jamie', 'jared', 'jason', 'jasper',
+  'javier', 'jay', 'jayden', 'jeff', 'jeffery', 'jeffrey', 'jeremiah', 'jeremy', 'jermaine', 'jerome',
+  'jerry', 'jesse', 'jessie', 'jesus', 'jim', 'jimmie', 'jimmy', 'joe', 'joel', 'joey',
+  'john', 'johnathan', 'johnnie', 'johnny', 'jon', 'jonah', 'jonas', 'jonathan', 'jonathon', 'jordan',
+  'jorge', 'jose', 'joseph', 'josh', 'joshua', 'juan', 'julian', 'julio', 'julius', 'justin',
+  'karl', 'keith', 'ken', 'kendall', 'kenneth', 'kenny', 'kent', 'kevin', 'kirk', 'kurt',
+  'kyle', 'lance', 'landon', 'larry', 'laurence', 'lawrence', 'lee', 'leo', 'leon', 'leonard',
+  'leroy', 'leslie', 'lester', 'levi', 'lewis', 'liam', 'lloyd', 'logan', 'lonnie', 'lorenzo',
+  'louis', 'lowell', 'lucas', 'luis', 'luke', 'luther', 'lyle', 'lynn', 'mack', 'malcolm',
+  'manuel', 'marc', 'marcus', 'mario', 'marion', 'mark', 'marlon', 'marshall', 'martin', 'marvin',
+  'mason', 'mathew', 'matt', 'matthew', 'maurice', 'max', 'maxwell', 'melvin', 'michael', 'micheal',
+  'miguel', 'mike', 'miles', 'milo', 'milton', 'mitchell', 'morris', 'moses', 'myron', 'nathan',
+  'nathaniel', 'neal', 'ned', 'neil', 'nelson', 'nicholas', 'nick', 'nicolas', 'noah', 'noel',
+  'norman', 'oliver', 'omar', 'orlando', 'oscar', 'otis', 'otto', 'owen', 'pablo', 'parker',
+  'pat', 'patrick', 'paul', 'pedro', 'percy', 'perry', 'pete', 'peter', 'phil', 'philip',
+  'phillip', 'pierce', 'preston', 'quentin', 'quincy', 'rafael', 'ralph', 'ramon', 'randall', 'randy',
+  'raul', 'ray', 'raymond', 'reginald', 'rene', 'rex', 'ricardo', 'richard', 'rick', 'ricky',
+  'riley', 'rob', 'robbie', 'robert', 'roberto', 'roderick', 'rodney', 'roger', 'roland', 'roman',
+  'ron', 'ronald', 'ronnie', 'ross', 'roy', 'ruben', 'rudolph', 'rudy', 'rufus', 'russell',
+  'ryan', 'salvador', 'sam', 'sammy', 'samuel', 'santiago', 'scott', 'sean', 'sebastian', 'sergio',
+  'seth', 'shane', 'shannon', 'shaun', 'shawn', 'sheldon', 'sherman', 'sidney', 'simon', 'spencer',
+  'stanley', 'stephen', 'steve', 'steven', 'stewart', 'stuart', 'sylvester', 'taylor', 'ted', 'terrance',
+  'terrell', 'terrence', 'terry', 'theodore', 'thomas', 'tim', 'timothy', 'tobias', 'toby', 'todd',
+  'tom', 'tommy', 'tony', 'travis', 'trent', 'trevor', 'troy', 'tyler', 'tyrone', 'vernon',
+  'victor', 'vincent', 'virgil', 'wade', 'wallace', 'walter', 'warren', 'wayne', 'wendell', 'wesley',
+  'wilbert', 'wilbur', 'will', 'willard', 'william', 'willie', 'willis', 'wilson', 'winston', 'wyatt',
+  'xavier', 'zachary', 'zane',
+]);
+
 // ============================================================================
 // YouTube Scraping
 // ============================================================================
@@ -238,8 +347,7 @@ function parseMetadata(title: string, description: string, channelName: string):
     }
   }
 
-  // Extract potential performer names
-  // This is tricky - look for common name patterns in description
+  // Extract potential performer names using capitalized word pairs
   const inferredPerformers = extractPerformerNames(description, channelName);
 
   return {
@@ -251,33 +359,37 @@ function parseMetadata(title: string, description: string, channelName: string):
 }
 
 /**
- * Attempt to extract performer names from text
- * Looks for patterns like "by John Smith" or "featuring Jane Doe"
+ * Extract performer names from text using capitalized word pairs
+ * Looks for "FirstName LastName" patterns where FirstName is a known first name
  */
 function extractPerformerNames(description: string, channelName: string): string[] {
   const names: string[] = [];
+  const combined = `${description} ${channelName}`;
 
-  // Common patterns for performer credits
-  const patterns = [
-    /(?:by|featuring|feat\.?|performed by|performers?:?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
-    /([A-Z][a-z]+\s+[A-Z][a-z]+)\s+(?:performs?|performing)/gi,
-  ];
+  // Find all capitalized word pairs (e.g., "Haylee Swick", "Lindsay Whitwam")
+  // Pattern: Capital letter + lowercase letters, space, Capital letter + lowercase letters
+  const wordPairPattern = /\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/g;
 
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(description)) !== null) {
-      const name = match[1].trim();
-      // Filter out common false positives
-      if (!isCommonPhrase(name) && !names.includes(name)) {
-        names.push(name);
-      }
+  let match;
+  while ((match = wordPairPattern.exec(combined)) !== null) {
+    const firstName = match[1];
+    const lastName = match[2];
+    const fullName = `${firstName} ${lastName}`;
+
+    // Check if first name is in our known names list
+    if (!COMMON_FIRST_NAMES.has(firstName.toLowerCase())) {
+      continue;
     }
-  }
 
-  // Channel name might be a person's name
-  if (/^[A-Z][a-z]+\s+[A-Z][a-z]+$/.test(channelName.trim())) {
-    if (!isCommonPhrase(channelName) && !names.includes(channelName)) {
-      names.push(channelName);
+    // Filter out common false positives (circus-related phrases)
+    if (isCommonPhrase(fullName)) {
+      continue;
+    }
+
+    // Avoid duplicates
+    if (!names.includes(fullName)) {
+      names.push(fullName);
+      console.log(`    Detected performer name: ${fullName}`);
     }
   }
 

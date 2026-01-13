@@ -139,6 +139,12 @@ export async function POST(request: NextRequest) {
           const actNames = prodActs.map(a => a.name);
           const title = `${actNames.join(' / ')} ${discovered.inferredYear}`;
 
+          // Default description for discovered videos
+          const defaultDescription = 'This was an existing video I found online, if you know the performers please tag them.';
+
+          // Joey Musselman's user ID (default uploader for discovered videos)
+          const defaultUploaderId = '14972e2c-fd79-44a9-ac39-6e0ec4439023';
+
           // Create video in PRODUCTION
           const prodVideo = await prodPrisma.video.create({
             data: {
@@ -146,9 +152,10 @@ export async function POST(request: NextRequest) {
               youtubeId: discovered.youtubeId,
               title,
               year: discovered.inferredYear,
-              description: discovered.rawDescription || null,
+              description: defaultDescription,
               showType: discovered.inferredShowType as ShowType,
-              // No uploader - these are discovered videos
+              needsPerformers: !discovered.inferredPerformerIds?.length, // Only flag if no performers tagged
+              uploaderId: defaultUploaderId,
             },
           });
 
@@ -159,6 +166,18 @@ export async function POST(request: NextRequest) {
               actId: act.id,
             })),
           });
+
+          // Create VideoPerformer relationships if any performers were tagged
+          if (discovered.inferredPerformerIds && discovered.inferredPerformerIds.length > 0) {
+            await prodPrisma.videoPerformer.createMany({
+              data: discovered.inferredPerformerIds.map(userId => ({
+                videoId: prodVideo.id,
+                userId,
+                taggedById: defaultUploaderId, // Discovery tool as tagger
+              })),
+              skipDuplicates: true,
+            });
+          }
 
           // Update local record as PUSHED
           await prisma.discoveredVideo.update({
