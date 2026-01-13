@@ -9,7 +9,7 @@ export interface YearFilterProps {
   startYear?: number;
 }
 
-export function YearFilter({ selectedYear, onChange, startYear = 1990 }: YearFilterProps) {
+export function YearFilter({ selectedYear, onChange, startYear = 1947 }: YearFilterProps) {
   const years = getYearRange(startYear);
   const yearOptions: SelectOption[] = [
     { value: '', label: 'All Years' },

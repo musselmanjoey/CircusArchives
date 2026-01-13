@@ -41,7 +41,7 @@ export function VideoSubmitForm({ acts, onSubmit }: VideoSubmitFormProps) {
   });
   const [selectedPerformers, setSelectedPerformers] = useState<Performer[]>([]);
 
-  const years = getYearRange(1990);
+  const years = getYearRange();
   const yearOptions: SelectOption[] = years.map((year) => ({
     value: year.toString(),
     label: year.toString(),

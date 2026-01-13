@@ -37,7 +37,7 @@ export default function EditVideoPage({ params }: EditVideoPageProps) {
   const [description, setDescription] = useState<string>('');
   const [selectedPerformers, setSelectedPerformers] = useState<Performer[]>([]);
 
-  const years = getYearRange(1990);
+  const years = getYearRange();
   const yearOptions: SelectOption[] = years.map((y) => ({
     value: y.toString(),
     label: y.toString(),

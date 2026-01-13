@@ -51,7 +51,7 @@ export function VideoUploadForm({ acts, onSuccess, onError }: VideoUploadFormPro
   const [selectedPerformers, setSelectedPerformers] = useState<Performer[]>([]);
   const [dragActive, setDragActive] = useState(false);
 
-  const years = getYearRange(1990);
+  const years = getYearRange();
   const yearOptions: SelectOption[] = years.map((year) => ({
     value: year.toString(),
     label: year.toString(),

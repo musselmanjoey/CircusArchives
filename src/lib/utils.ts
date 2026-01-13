@@ -22,8 +22,9 @@ export function formatDate(date: Date | string): string {
 
 /**
  * Get an array of years from start year to current year
+ * FSU Flying High Circus was founded in 1947
  */
-export function getYearRange(startYear: number = 1990): number[] {
+export function getYearRange(startYear: number = 1947): number[] {
   const currentYear = new Date().getFullYear();
   const years: number[] = [];
   for (let year = currentYear; year >= startYear; year--) {
