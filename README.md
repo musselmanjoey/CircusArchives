@@ -65,7 +65,9 @@ This platform provides a searchable video archive where alumni can:
 - Direct video upload from browser (mobile & desktop)
 - Client-side upload to Vercel Blob (up to 2GB files)
 - Upload queue with admin visibility
-- Local script processes queue and uploads to YouTube
+- **Automated GitHub Actions** processes queue and uploads to YouTube
+- Webhook trigger on upload + 2-hour cron backup
+- Auto-cleanup of Vercel Blob after successful YouTube upload
 - iOS Safari compatible
 
 ### V7+ - Future
@@ -109,6 +111,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Environment Variables
 
+### Vercel Environment Variables
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_PUBLIC_URL` | Yes | PostgreSQL connection string (use Railway's public URL) |
@@ -116,6 +119,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 | `AUTH_TRUST_HOST` | Production | Set to `true` for production |
 | `NEXT_PUBLIC_APP_URL` | Optional | Public URL of the app |
 | `BLOB_READ_WRITE_TOKEN` | Yes | Vercel Blob storage token |
+| `GITHUB_PAT` | Yes | GitHub PAT with `repo` scope (for triggering Actions) |
+| `GITHUB_REPO` | Yes | Repository name (e.g., `username/CircusArchives`) |
+
+### GitHub Actions Secrets
+| Secret | Description |
+|--------|-------------|
+| `DATABASE_PUBLIC_URL` | Railway PostgreSQL public connection string |
+| `YOUTUBE_CLIENT_ID` | Google Cloud OAuth client ID |
+| `YOUTUBE_CLIENT_SECRET` | Google Cloud OAuth client secret |
+| `YOUTUBE_REFRESH_TOKEN` | YouTube OAuth refresh token (from `tools/youtube/credentials/token.json`) |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token (for cleanup after upload) |
 
 ## Project Structure
 
@@ -161,8 +175,8 @@ npm run queue:process
 ## Technical Highlights
 
 - **Client-side uploads to Vercel Blob** bypass the 4.5MB serverless function limit, enabling 2GB video uploads directly from mobile browsers
+- **Automated upload pipeline** via GitHub Actions: webhook triggers on upload, with 2-hour cron backup. Downloads from Blob → uploads to YouTube → cleans up Blob storage
 - **Weighted voting system** gives performers a 2x vote bonus for videos they're tagged in, incentivizing accurate performer attribution
-- **Hybrid upload pipeline** queues videos in Vercel Blob, then processes them via local script for YouTube upload (working around YouTube API quota limits)
 - **Mobile-first responsive design** with hamburger navigation, tested at 375px width
 - **Name-based auth** (no passwords) tailored for a trusted alumni community
 

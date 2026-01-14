@@ -19,8 +19,10 @@ npx prisma studio        # Visual DB browser
 - `src/lib/auth.ts` - NextAuth configuration
 - `prisma/schema.prisma` - Database schema (source of truth)
 - `src/types/index.ts` - TypeScript types
-- `scripts/process-upload-queue.ts` - Downloads from Vercel Blob, uploads to YouTube
-- `tools/youtube/scripts/upload.py` - Python YouTube upload script
+- `scripts/process-upload-queue.ts` - Local queue processor (legacy, for manual runs)
+- `scripts/process-queue-gh.py` - GitHub Actions queue processor (automated)
+- `.github/workflows/process-queue.yml` - GH Action: triggers on upload or every 2hrs
+- `tools/youtube/scripts/upload.py` - Python YouTube upload script (local use)
 
 ## Conventions
 - Named exports: `export const ComponentName = () => {}`
@@ -36,7 +38,7 @@ npx prisma studio        # Visual DB browser
 - V3 ✅ Voting (one vote per act, performer 2x bonus, rankings homepage)
 - V4 ✅ Comments + Leaderboard + About/Support (140-char comments, act leaderboards, static pages)
 - V5 ✅ Multi-Act + Show Type + UI Overhaul (multi-act videos, Home/Callaway shows, FSU branding, mobile-responsive)
-- V6 ✅ Video Upload System (client-side Vercel Blob upload, queue processing, YouTube upload via local script)
+- V6 ✅ Video Upload System (client-side Vercel Blob upload, automated GitHub Actions processing, YouTube upload)
 - V7 Planned: OAuth + Email invites
 
 ## Pre-Commit Checklist
