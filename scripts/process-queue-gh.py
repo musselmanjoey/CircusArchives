@@ -22,7 +22,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from urllib.error import URLError
 
 import psycopg2
@@ -195,6 +195,35 @@ def download_from_blob(blob_url: str, file_name: str) -> str:
         temp_file.close()
         os.unlink(temp_path)
         raise
+
+
+def delete_blob(blob_url: str) -> bool:
+    """Delete a blob from Vercel Blob storage after successful upload."""
+    blob_token = os.environ.get('BLOB_READ_WRITE_TOKEN')
+    if not blob_token:
+        print("Warning: BLOB_READ_WRITE_TOKEN not set, skipping blob deletion")
+        return False
+
+    try:
+        req = Request(
+            'https://blob.vercel-storage.com/delete',
+            data=json.dumps({'urls': [blob_url]}).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {blob_token}',
+                'Content-Type': 'application/json',
+            },
+            method='POST'
+        )
+        response = urlopen(req, timeout=30)
+        if response.status == 200:
+            print(f"Deleted blob: {blob_url}")
+            return True
+        else:
+            print(f"Failed to delete blob: HTTP {response.status}")
+            return False
+    except Exception as e:
+        print(f"Error deleting blob: {e}")
+        return False
 
 
 def generate_description(
@@ -546,6 +575,9 @@ def process_queue() -> None:
 
                     # Increment daily count
                     increment_daily_upload_count(conn)
+
+                    # Delete blob from Vercel storage
+                    delete_blob(item['blob_url'])
 
                     success_count += 1
                     print(f"SUCCESS: {youtube_url}")
