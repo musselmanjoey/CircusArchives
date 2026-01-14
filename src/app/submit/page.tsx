@@ -68,7 +68,14 @@ export default function SubmitPage() {
       setTimeout(() => router.push('/videos'), 2000);
     } catch (error) {
       setSubmitStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to submit video');
+      let message = error instanceof Error ? error.message : 'Failed to submit video';
+
+      // Check for session expiry / auth errors
+      if (message.includes('401') || message.toLowerCase().includes('unauthorized') || message.toLowerCase().includes('authentication')) {
+        message = 'Your session has expired. Please refresh the page and sign in again.';
+      }
+
+      setErrorMessage(message);
     }
   };
 

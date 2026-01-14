@@ -228,7 +228,13 @@ export function VideoUploadForm({ acts, onSuccess, onError }: VideoUploadFormPro
 
       onSuccess(result.message || 'Video uploaded and queued successfully!');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed';
+      let message = err instanceof Error ? err.message : 'Upload failed';
+
+      // Check for session expiry / auth errors
+      if (message.includes('401') || message.toLowerCase().includes('unauthorized') || message.toLowerCase().includes('authentication')) {
+        message = 'Your session has expired. Please refresh the page and sign in again.';
+      }
+
       setErrors({ ...errors, file: message });
       onError(message);
     } finally {
