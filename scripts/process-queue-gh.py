@@ -205,15 +205,10 @@ def delete_blob(blob_url: str) -> bool:
         return False
 
     try:
-        req = Request(
-            'https://blob.vercel-storage.com/delete',
-            data=json.dumps({'urls': [blob_url]}).encode('utf-8'),
-            headers={
-                'Authorization': f'Bearer {blob_token}',
-                'Content-Type': 'application/json',
-            },
-            method='POST'
-        )
+        data = json.dumps({'urls': [blob_url]}).encode('utf-8')
+        req = Request('https://blob.vercel-storage.com/delete', data)
+        req.add_header('Authorization', f'Bearer {blob_token}')
+        req.add_header('Content-Type', 'application/json')
         response = urlopen(req, timeout=30)
         if response.status == 200:
             print(f"Deleted blob: {blob_url}")
