@@ -11,12 +11,12 @@ import { Button } from '@/components/ui/Button';
 import type { SelectOption } from '@/components/ui/Select';
 import type { Act, ApiResponse } from '@/types';
 
-type SubmitMode = 'upload' | 'youtube';
+type SubmitMode = 'upload' | 'youtube' | null;
 
 export default function SubmitPage() {
   const router = useRouter();
   const { data: session, status: authStatus } = useSession();
-  const [mode, setMode] = useState<SubmitMode>('upload');
+  const [mode, setMode] = useState<SubmitMode>(null);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [acts, setActs] = useState<SelectOption[]>([]);
   const [isLoadingActs, setIsLoadingActs] = useState(true);
@@ -84,6 +84,12 @@ export default function SubmitPage() {
   };
 
   const resetForm = () => {
+    setSubmitStatus('idle');
+    setErrorMessage('');
+  };
+
+  const resetToChoice = () => {
+    setMode(null);
     setSubmitStatus('idle');
     setErrorMessage('');
   };
@@ -158,35 +164,99 @@ export default function SubmitPage() {
 
       {/* Form Section */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mode Toggle */}
-        {submitStatus === 'idle' && (
-          <div className="flex rounded-xl bg-surface p-1 mb-6">
+        {/* Initial Choice Screen */}
+        {mode === null && submitStatus === 'idle' && (
+          <div className="space-y-4">
+            <p className="text-center text-text-muted mb-6">
+              How would you like to add your video?
+            </p>
+
+            {/* YouTube Link Option */}
             <button
-              onClick={() => { setMode('upload'); resetForm(); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === 'upload'
-                  ? 'bg-card text-garnet shadow-sm'
-                  : 'text-text-muted hover:text-text'
-              }`}
+              onClick={() => setMode('youtube')}
+              className="w-full text-left bg-card border border-border rounded-xl p-5 hover:border-garnet/50 hover:shadow-md transition-all group"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Upload Video
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-red-200 transition-colors">
+                  <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-text group-hover:text-garnet transition-colors">
+                    I have a YouTube link
+                  </h3>
+                  <p className="text-sm text-text-muted mt-1">
+                    Submit a video that&apos;s already on YouTube. Just paste the URL and add details.
+                  </p>
+                </div>
+                <svg className="w-5 h-5 text-text-light group-hover:text-garnet transition-colors shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </button>
+
+            {/* Upload Option */}
             <button
-              onClick={() => { setMode('youtube'); resetForm(); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === 'youtube'
-                  ? 'bg-card text-garnet shadow-sm'
-                  : 'text-text-muted hover:text-text'
-              }`}
+              onClick={() => setMode('upload')}
+              className="w-full text-left bg-card border border-border rounded-xl p-5 hover:border-garnet/50 hover:shadow-md transition-all group"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
-              YouTube Link
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-garnet/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-garnet/20 transition-colors">
+                  <svg className="w-6 h-6 text-garnet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-text group-hover:text-garnet transition-colors">
+                    Upload from my device
+                  </h3>
+                  <p className="text-sm text-text-muted mt-1">
+                    Upload a video file from your phone or computer. It will be published to the archive&apos;s YouTube channel.
+                  </p>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md w-fit">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Video will be uploaded to YouTube
+                  </div>
+                </div>
+                <svg className="w-5 h-5 text-text-light group-hover:text-garnet transition-colors shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </button>
+          </div>
+        )}
+
+        {/* Back Button when mode is selected */}
+        {mode !== null && submitStatus === 'idle' && (
+          <button
+            onClick={resetToChoice}
+            className="flex items-center gap-2 text-sm text-text-muted hover:text-garnet transition-colors mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to options
+          </button>
+        )}
+
+        {/* Upload Disclaimer */}
+        {mode === 'upload' && submitStatus === 'idle' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="font-medium text-amber-800">This will upload to YouTube</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  Your video will be published to the FSU Flying High Circus Archives YouTube channel as an unlisted video.
+                  Only people with the link (through this archive) will be able to view it.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -250,7 +320,7 @@ export default function SubmitPage() {
         )}
 
         {/* Loading Form State */}
-        {isLoadingActs && (
+        {isLoadingActs && mode !== null && (
           <Card variant="elevated">
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -265,7 +335,7 @@ export default function SubmitPage() {
         )}
 
         {/* Forms */}
-        {!isLoadingActs && submitStatus === 'idle' && (
+        {!isLoadingActs && submitStatus === 'idle' && mode !== null && (
           <Card variant="elevated">
             <CardContent className="p-6">
               {mode === 'upload' ? (
@@ -278,11 +348,11 @@ export default function SubmitPage() {
         )}
 
         {/* Help Text */}
-        {submitStatus === 'idle' && (
+        {submitStatus === 'idle' && mode !== null && (
           <div className="mt-6 text-center">
             <p className="text-sm text-text-muted">
               {mode === 'upload' ? (
-                <>Videos are uploaded to our YouTube channel and will appear in the archive once processed.</>
+                <>Max file size: 2GB. Supported formats: MP4, MOV, AVI, WebM, MKV</>
               ) : (
                 <>
                   Only YouTube videos are supported.{' '}
