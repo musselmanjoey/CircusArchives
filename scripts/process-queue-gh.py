@@ -29,7 +29,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
+from google.auth.transport.requests import Request as GoogleAuthRequest
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
@@ -79,7 +79,7 @@ def get_youtube_credentials() -> Credentials:
     )
 
     # Refresh to get a valid access token
-    creds.refresh(Request())
+    creds.refresh(GoogleAuthRequest())
     return creds
 
 
