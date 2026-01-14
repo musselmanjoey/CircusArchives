@@ -1,6 +1,7 @@
 'use client';
 
 import { Select, type SelectOption } from '@/components/ui/Select';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { YearFilter } from './YearFilter';
 import type { VideoFilters } from '@/types';
 
@@ -42,13 +43,15 @@ export function FilterPanel({ acts, performers, filters, onFilterChange }: Filte
             onChange={(e) => handleActChange(e.target.value)}
           />
         </div>
-        <div className="w-full sm:w-auto sm:min-w-[180px]">
-          <Select
+        <div className="w-full sm:w-auto sm:min-w-[200px]">
+          <SearchableSelect
             id="performer-filter"
             label="Performer"
-            options={[{ value: '', label: 'All Performers' }, ...performers]}
+            options={performers}
             value={filters.performerId || ''}
-            onChange={(e) => handlePerformerChange(e.target.value)}
+            onChange={handlePerformerChange}
+            placeholder="Search performers..."
+            allOptionLabel="All Performers"
           />
         </div>
         <div className="w-full sm:w-auto sm:min-w-[140px]">
