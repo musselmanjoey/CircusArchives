@@ -1,0 +1,45 @@
+name: Process Upload Queue
+
+on:
+  # Trigger via webhook from the API
+  repository_dispatch:
+    types: [process-upload-queue]
+
+  # Backup: run every 2 hours
+  schedule:
+    - cron: '0 */2 * * *'
+
+  # Allow manual trigger for testing
+  workflow_dispatch:
+
+jobs:
+  process-queue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 psycopg2-binary
+
+      - name: Process upload queue
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          DAILY_UPLOAD_LIMIT: '10'
+        run: python scripts/process-queue-gh.py
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Queue processing completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
