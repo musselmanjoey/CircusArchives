@@ -50,10 +50,10 @@ RETRIABLE_EXCEPTIONS = (
 
 
 def get_db_connection():
-    """Get a database connection using the DATABASE_URL environment variable."""
-    database_url = os.environ.get('DATABASE_URL')
+    """Get a database connection using the DATABASE_PUBLIC_URL environment variable."""
+    database_url = os.environ.get('DATABASE_PUBLIC_URL')
     if not database_url:
-        raise ValueError("DATABASE_URL environment variable is required")
+        raise ValueError("DATABASE_PUBLIC_URL environment variable is required")
     return psycopg2.connect(database_url)
 
 
