@@ -160,6 +160,19 @@ export interface ActRanking {
   totalVotes: number;
 }
 
+// Homepage rankings response
+export interface HomepageRankings {
+  topVideos: TopVideo[];
+  acts: ActRanking[];
+}
+
+// Top video for homepage display
+export interface TopVideo {
+  video: Video;
+  act: Act;
+  voteCount: number;
+}
+
 // V6: Upload Queue types
 export type UploadStatus = 'PENDING' | 'UPLOADED' | 'FAILED';
 

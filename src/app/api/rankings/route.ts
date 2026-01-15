@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import type { ApiResponse, VideoRanking, ActRanking, Video } from '@/types';
+import type { ApiResponse, VideoRanking, ActRanking, HomepageRankings, Video } from '@/types';
 
 // GET /api/rankings - Get rankings for all acts or a specific act
 export async function GET(request: NextRequest) {
@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
       const rankings = await getActVideoRankings(actId);
       return NextResponse.json<ApiResponse<VideoRanking[]>>({ data: rankings });
     } else {
-      // Get top video for each act
-      const rankings = await getAllActRankings();
-      return NextResponse.json<ApiResponse<ActRanking[]>>({ data: rankings });
+      // Get homepage rankings: top 6 videos + all acts
+      const rankings = await getHomepageRankings();
+      return NextResponse.json<ApiResponse<HomepageRankings>>({ data: rankings });
     }
   } catch {
     return NextResponse.json<ApiResponse<null>>(
@@ -114,14 +114,14 @@ async function getActVideoRankings(actId: string): Promise<VideoRanking[]> {
   return rankings;
 }
 
-// Get top video for each act
-async function getAllActRankings(): Promise<ActRanking[]> {
+// Get homepage rankings: top 6 videos (one per act) + all acts
+async function getHomepageRankings(): Promise<HomepageRankings> {
   // Get all acts
   const acts = await prisma.act.findMany({
     orderBy: { name: 'asc' },
   });
 
-  const rankings: ActRanking[] = [];
+  const actRankings: ActRanking[] = [];
 
   for (const act of acts) {
     // Get video rankings for this act
@@ -130,12 +130,31 @@ async function getAllActRankings(): Promise<ActRanking[]> {
     // Top video is the first one (highest votes)
     const topRanking = videoRankings[0];
 
-    rankings.push({
+    actRankings.push({
       act,
       topVideo: topRanking?.video ?? null,
       totalVotes: topRanking?.voteCount ?? 0,
     });
   }
 
-  return rankings;
+  // Build top 6 videos list (one per act, sorted by votes)
+  const topVideos = actRankings
+    .filter((r) => r.topVideo !== null && r.totalVotes > 0)
+    .sort((a, b) => b.totalVotes - a.totalVotes)
+    .slice(0, 6)
+    .map((r) => ({
+      video: r.topVideo!,
+      act: r.act,
+      voteCount: r.totalVotes,
+    }));
+
+  // Sort acts alphabetically for the acts section
+  const sortedActs = [...actRankings].sort((a, b) =>
+    a.act.name.localeCompare(b.act.name)
+  );
+
+  return {
+    topVideos,
+    acts: sortedActs,
+  };
 }
